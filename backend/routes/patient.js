@@ -5,6 +5,12 @@ const {
   getMyRecords,
   getRecordById,
 } = require("../controllers/recordController");
+const uploadReport = require("../middleware/uploadReport");
+const {
+  getMyReports,
+  uploadMyReport,
+  deleteMyReport,
+} = require("../controllers/reportController");
 
 const router = express.Router();
 
@@ -26,5 +32,9 @@ router.get("/medicines", (req, res) => {
 
 router.get("/records", requireRole("patient"), getMyRecords);
 router.get("/records/:id", requireRole("patient"), getRecordById);
+
+router.get("/reports", getMyReports);
+router.post("/reports", uploadReport.single("report"), uploadMyReport);
+router.delete("/reports/:id", deleteMyReport);
 
 module.exports = router;

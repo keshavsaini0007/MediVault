@@ -31,6 +31,17 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
+
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ message: "File too large. Max size is 10MB." });
+  }
+
+  if (
+    err.message === "Only PDF, JPG, PNG, and WEBP files are allowed."
+  ) {
+    return res.status(400).json({ message: err.message });
+  }
+
   res.status(err.status || 500).json({
     message: err.message || "Internal server error",
   });

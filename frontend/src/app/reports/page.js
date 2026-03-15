@@ -1,37 +1,152 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Sidebar from '../../components/Sidebar'
 import Navbar from '../../components/Navbar'
 
-const reports = [
-  { id: 1, icon: '🫁', name: 'Chest X-Ray', date: 'April 12, 2024', type: 'X-Ray', status: 'Reviewed', summary: 'No significant abnormalities. Lungs appear clear with normal cardiothoracic ratio.' },
-  { id: 2, icon: '🔬', name: 'Blood Test', date: 'April 5, 2024', type: 'Lab', status: 'Abnormal', summary: 'Platelet count low (85,000). Dengue NS1 Antigen: Positive. Immediate attention required.' },
-  { id: 3, icon: '🔊', name: 'Ultrasound', date: 'March 20, 2024', type: 'Imaging', status: 'Normal', summary: 'Abdominal ultrasound normal. No hepatomegaly or splenomegaly detected.' },
-]
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1'
+
+const formatSize = (size = 0) => {
+  if (size < 1024) return `${size} B`
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${(size / (1024 * 1024)).toFixed(2)} MB`
+}
 
 export default function Reports() {
+  const [reports, setReports] = useState([])
   const [uploading, setUploading] = useState(false)
-  const [uploaded, setUploaded] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [selectedType, setSelectedType] = useState('X-Ray')
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const inputRef = useRef(null)
 
-  const handleUpload = () => {
-    setUploading(true)
-    setTimeout(() => { setUploading(false); setUploaded(true); }, 2500)
+  const getToken = () => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('token') || localStorage.getItem('medivault-token') || ''
+  }
+
+  const loadReports = async () => {
+    try {
+      setError('')
+      const token = getToken()
+      if (!token) {
+        setError('Please login first. Token not found in localStorage.')
+        return
+      }
+
+      const response = await fetch(`${API_BASE}/patient/reports`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch reports.')
+      }
+
+      setReports(data.reports || [])
+    } catch (err) {
+      setError(err.message || 'Failed to fetch reports.')
+    }
+  }
+
+  useEffect(() => {
+    loadReports()
+  }, [])
+
+  const onFileSelect = (file) => {
+    if (!file) return
+    setSelectedFile(file)
+    setError('')
+    setSuccess('')
+  }
+
+  const handleUpload = async () => {
+    try {
+      setError('')
+      setSuccess('')
+
+      if (!selectedFile) {
+        setError('Please choose a file first.')
+        return
+      }
+
+      const token = getToken()
+      if (!token) {
+        setError('Please login first. Token not found in localStorage.')
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('report', selectedFile)
+      formData.append('reportType', selectedType)
+
+      setUploading(true)
+      const response = await fetch(`${API_BASE}/patient/reports`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.message || 'Upload failed.')
+      }
+
+      setSuccess('Report uploaded to Cloudinary successfully.')
+      setSelectedFile(null)
+      if (inputRef.current) {
+        inputRef.current.value = ''
+      }
+      await loadReports()
+    } catch (err) {
+      setError(err.message || 'Upload failed.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDelete = async (reportId) => {
+    try {
+      setError('')
+      setSuccess('')
+      const token = getToken()
+      if (!token) {
+        setError('Please login first. Token not found in localStorage.')
+        return
+      }
+
+      const response = await fetch(`${API_BASE}/patient/reports/${reportId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.message || 'Delete failed.')
+      }
+
+      setSuccess('Report deleted successfully.')
+      await loadReports()
+    } catch (err) {
+      setError(err.message || 'Delete failed.')
+    }
   }
 
   return (
     <div>
       <Sidebar role="patient" userName="Rahul Singh" userInitial="RS" />
       <div className="app-layout">
-        <Navbar title="Reports & Tests" subtitle="Upload and manage your medical reports" />
+        <Navbar title="Reports & Tests" subtitle="Upload and manage your Cloudinary reports" />
         <main className="page-content">
-
           <div className="grid-sidebar animate-in">
-            {/* Left: Upload */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-              {/* Upload Card */}
               <div className="card">
                 <div className="card-header">
                   <span className="card-title">📤 Upload Medical Report</span>
@@ -50,56 +165,44 @@ export default function Reports() {
                     </select>
                   </div>
 
-                  {/* Drag & Drop Zone */}
                   <div
                     className="upload-zone"
                     style={{
                       borderColor: dragOver ? 'var(--primary)' : undefined,
-                      background: dragOver ? 'var(--primary-soft)' : undefined
+                      background: dragOver ? 'var(--primary-soft)' : undefined,
+                      cursor: 'pointer'
                     }}
-                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                    onClick={() => inputRef.current?.click()}
+                    onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                     onDragLeave={() => setDragOver(false)}
-                    onDrop={e => { e.preventDefault(); setDragOver(false); }}
+                    onDrop={e => {
+                      e.preventDefault()
+                      setDragOver(false)
+                      const file = e.dataTransfer.files?.[0]
+                      onFileSelect(file)
+                    }}
                   >
                     <div className="upload-icon">📁</div>
                     <div className="upload-text">Drag & drop your file here</div>
-                    <div className="upload-sub">or click to browse — PDF, JPG, PNG up to 10MB</div>
-                    <input type="file" style={{ display: 'none' }} id="fileInput" accept=".pdf,.jpg,.jpeg,.png" />
-                    <label htmlFor="fileInput">
-                      <button className="btn btn-outline" style={{ marginTop: 16 }} onClick={e => e.stopPropagation()}>
-                        Browse Files
-                      </button>
-                    </label>
+                    <div className="upload-sub">Tap browse on phone to open gallery/camera (PDF, JPG, PNG, WEBP, max 10MB)</div>
+                    <input
+                      ref={inputRef}
+                      type="file"
+                      style={{ display: 'none' }}
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,image/*,application/pdf"
+                      capture="environment"
+                      onChange={e => onFileSelect(e.target.files?.[0])}
+                    />
+                    <button className="btn btn-outline" style={{ marginTop: 16 }} type="button">
+                      Browse Files / Gallery
+                    </button>
                   </div>
 
-                  {/* Upload Types Quick Buttons */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 16 }}>
-                    {[
-                      { icon: '🫁', label: 'Upload X-Ray', color: 'var(--primary-soft)', border: 'var(--primary)' },
-                      { icon: '🔊', label: 'Upload Ultrasound', color: 'var(--teal-soft)', border: 'var(--teal)' },
-                      { icon: '🔬', label: 'Blood Report', color: 'var(--danger-soft)', border: 'var(--danger)' },
-                    ].map((b, i) => (
-                      <button key={i} style={{
-                        padding: '10px 8px',
-                        background: b.color,
-                        border: `1px solid ${b.border}33`,
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        fontFamily: 'inherit',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                        color: 'var(--gray-700)',
-                        transition: 'transform 0.15s'
-                      }}
-                        onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                        onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-                      >
-                        <span style={{ fontSize: 20 }}>{b.icon}</span>
-                        {b.label}
-                      </button>
-                    ))}
-                  </div>
+                  {selectedFile && (
+                    <div style={{ marginTop: 12, padding: 10, border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--text-muted)' }}>
+                      Selected: <strong>{selectedFile.name}</strong> ({formatSize(selectedFile.size)})
+                    </div>
+                  )}
 
                   <div className="divider" />
 
@@ -109,33 +212,24 @@ export default function Reports() {
                     onClick={handleUpload}
                     disabled={uploading}
                   >
-                    {uploading ? '⏳ Uploading & Analysing with AI...' : '🚀 Upload Report'}
+                    {uploading ? '⏳ Uploading to Cloudinary...' : '🚀 Upload Report'}
                   </button>
 
-                  {/* Upload Progress */}
-                  {uploading && (
-                    <div style={{ marginTop: 12 }}>
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: '70%', animation: 'progressAnim 2.5s ease forwards' }} />
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--gray-500)', textAlign: 'center', marginTop: 6 }}>🤖 AI is analysing your report...</div>
+                  {error && (
+                    <div style={{ marginTop: 12, padding: 10, borderRadius: 'var(--radius-sm)', background: 'var(--danger-soft)', color: 'var(--danger)', fontSize: 12 }}>
+                      {error}
                     </div>
                   )}
 
-                  {/* Success State */}
-                  {uploaded && !uploading && (
-                    <div style={{ marginTop: 12, padding: 14, background: 'var(--success-soft)', borderRadius: 'var(--radius-md)', border: '1px solid #BBF7D0' }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--success)', marginBottom: 6 }}>✅ Upload Successful!</div>
-                      <div style={{ fontSize: 12, color: 'var(--success)', fontWeight: 500 }}>AI Summary: No significant abnormalities detected. Values appear within normal range.</div>
-                      <div style={{ fontSize: 10, color: 'var(--gray-500)', marginTop: 6 }}>⚠️ Not a substitute for professional medical advice.</div>
+                  {success && (
+                    <div style={{ marginTop: 12, padding: 10, borderRadius: 'var(--radius-sm)', background: 'var(--success-soft)', color: 'var(--success)', fontSize: 12 }}>
+                      {success}
                     </div>
                   )}
                 </div>
               </div>
-
             </div>
 
-            {/* Right: My Reports */}
             <div>
               <div className="card animate-in" style={{ animationDelay: '0.1s' }}>
                 <div className="card-header">
@@ -143,28 +237,29 @@ export default function Reports() {
                   <span className="badge badge-primary">{reports.length} reports</span>
                 </div>
                 <div className="card-body" style={{ padding: 0 }}>
+                  {reports.length === 0 && (
+                    <div style={{ padding: 20, fontSize: 13, color: 'var(--text-muted)' }}>
+                      No reports uploaded yet.
+                    </div>
+                  )}
+
                   {reports.map((r, i) => (
-                    <div key={r.id} style={{ padding: '16px 20px', borderBottom: i < reports.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
+                    <div key={r._id} style={{ padding: '16px 20px', borderBottom: i < reports.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
                       <div className="flex-between" style={{ marginBottom: 8 }}>
-                        <div className="flex flex-center gap-3">
-                          <div style={{ width: 44, height: 44, background: 'var(--gray-100)', borderRadius: 'var(--radius-sm)', display: 'grid', placeItems: 'center', fontSize: 22, flexShrink: 0 }}>
-                            {r.icon}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 13 }}>{r.name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{r.date} · {r.type}</div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 13 }}>{r.originalName}</div>
+                          <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>
+                            {r.reportType} · {new Date(r.createdAt).toLocaleString()} · {formatSize(r.size)}
                           </div>
                         </div>
                         <div className="flex flex-center gap-2">
-                          <span className={`badge ${r.status === 'Normal' || r.status === 'Reviewed' ? 'badge-success' : 'badge-danger'}`}>{r.status}</span>
-                          <button className="btn btn-primary btn-sm">View →</button>
+                          <a href={r.fileUrl} target="_blank" rel="noreferrer">
+                            <button className="btn btn-primary btn-sm" type="button">View</button>
+                          </a>
+                          <button className="btn btn-outline btn-sm" type="button" onClick={() => handleDelete(r._id)}>
+                            Delete
+                          </button>
                         </div>
-                      </div>
-
-                      {/* AI Summary */}
-                      <div style={{ background: 'var(--gray-50)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', borderLeft: '3px solid var(--primary)' }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', marginBottom: 4 }}>🤖 AI SUMMARY</div>
-                        <div style={{ fontSize: 12, color: 'var(--gray-600)', lineHeight: 1.5 }}>{r.summary}</div>
                       </div>
                     </div>
                   ))}
@@ -172,7 +267,6 @@ export default function Reports() {
               </div>
             </div>
           </div>
-
         </main>
       </div>
     </div>

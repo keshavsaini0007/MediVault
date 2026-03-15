@@ -1,13 +1,60 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Navbar from '../../components/Navbar'
 import Link from 'next/link'
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1'
+
 export default function PatientDetails() {
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('medications')
   const [showSMS, setShowSMS] = useState(false)
   const [smsMsg, setSmsMsg] = useState('')
+  const [doctorReports, setDoctorReports] = useState([])
+  const [reportsLoading, setReportsLoading] = useState(false)
+  const [reportsError, setReportsError] = useState('')
+
+  const patientId = searchParams.get('patientId')
+
+  useEffect(() => {
+    const fetchDoctorReports = async () => {
+      if (activeTab !== 'reports' || !patientId) {
+        return
+      }
+
+      try {
+        setReportsError('')
+        setReportsLoading(true)
+
+        const token = localStorage.getItem('token') || localStorage.getItem('medivault-token')
+        if (!token) {
+          setReportsError('Doctor token not found in localStorage.')
+          return
+        }
+
+        const response = await fetch(`${API_BASE}/doctor/patients/${patientId}/reports`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to load reports.')
+        }
+
+        setDoctorReports(data.reports || [])
+      } catch (error) {
+        setReportsError(error.message || 'Failed to load reports.')
+      } finally {
+        setReportsLoading(false)
+      }
+    }
+
+    fetchDoctorReports()
+  }, [activeTab, patientId])
 
   return (
     <div>
@@ -150,25 +197,43 @@ export default function PatientDetails() {
                     <span className="card-title">📋 Latest Reports</span>
                   </div>
                   <div className="card-body">
-                    {[
-                      { icon: '🫁', name: 'Chest X-Ray', date: 'Jan 11, 2024', summary: 'No significant abnormalities detected. Lungs appear clear.', status: 'Normal' },
-                      { icon: '🔬', name: 'Blood Test', date: 'Jan 10, 2024', summary: 'Platelet count: 85,000 (Low). WBC elevated. Dengue NS1 Positive.', status: 'Abnormal' },
-                    ].map((r, i) => (
-                      <div key={i} style={{ padding: '16px 0', borderBottom: i < 1 ? '1px solid var(--gray-100)' : 'none' }}>
+                    {!patientId && (
+                      <div style={{ fontSize: 12, color: 'var(--gray-500)' }}>
+                        Open this page with <strong>?patientId=&lt;id&gt;</strong> to load patient reports.
+                      </div>
+                    )}
+
+                    {reportsLoading && (
+                      <div style={{ fontSize: 12, color: 'var(--gray-500)' }}>Loading reports...</div>
+                    )}
+
+                    {reportsError && (
+                      <div style={{ fontSize: 12, color: 'var(--danger)' }}>{reportsError}</div>
+                    )}
+
+                    {!reportsLoading && !reportsError && patientId && doctorReports.length === 0 && (
+                      <div style={{ fontSize: 12, color: 'var(--gray-500)' }}>No uploaded reports found for this patient.</div>
+                    )}
+
+                    {doctorReports.map((r, i) => (
+                      <div key={r._id} style={{ padding: '16px 0', borderBottom: i < doctorReports.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
                         <div className="flex-between" style={{ marginBottom: 8 }}>
                           <div className="flex flex-center gap-3">
-                            <span style={{ fontSize: 28 }}>{r.icon}</span>
+                            <span style={{ fontSize: 24 }}>📁</span>
                             <div>
-                              <div style={{ fontWeight: 700, fontSize: 14 }}>{r.name}</div>
-                              <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>Uploaded on {r.date}</div>
+                              <div style={{ fontWeight: 700, fontSize: 14 }}>{r.originalName}</div>
+                              <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>
+                                Uploaded on {new Date(r.createdAt).toLocaleString()} · {r.reportType}
+                              </div>
                             </div>
                           </div>
-                          <span className={`badge ${r.status === 'Normal' ? 'badge-success' : 'badge-danger'}`}>{r.status}</span>
+                          <a href={r.fileUrl} target="_blank" rel="noreferrer">
+                            <button className="btn btn-primary btn-sm" type="button">View</button>
+                          </a>
                         </div>
                         <div style={{ background: 'var(--gray-50)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', borderLeft: '3px solid var(--primary)' }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', marginBottom: 4 }}>🤖 AI Summary</div>
-                          <div style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.6 }}>{r.summary}</div>
-                          <div style={{ fontSize: 10, color: 'var(--gray-400)', marginTop: 6 }}>⚠️ This is AI-generated. Not a substitute for professional diagnosis.</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', marginBottom: 4 }}>Report Type</div>
+                          <div style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.6 }}>{r.reportType}</div>
                         </div>
                       </div>
                     ))}

@@ -6,6 +6,7 @@ const {
   getRecordById,
   getPatientRecords,
 } = require("../controllers/recordController");
+const { getPatientReports } = require("../controllers/reportController");
 
 const router = express.Router();
 
@@ -29,5 +30,6 @@ router.get("/patients", verifyToken, requireRole("doctor"), (req, res) => {
 router.post("/records", createRecord);
 router.get("/records/:id", getRecordById);
 router.get("/patients/:patientId/records", getPatientRecords);
+router.get("/patients/:patientId/reports", getPatientReports);
 
 module.exports = router;
