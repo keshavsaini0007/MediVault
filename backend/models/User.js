@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
         trim: true
     },
     allergies: [String],
-    emegencyContact: {
+    emergencyContact: {
         name: String,
         phone: String   
     },

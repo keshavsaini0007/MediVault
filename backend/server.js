@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db.js");
+const authRoutes = require("./routes/auth");
 
 dotenv.config();
 connectDB();
@@ -14,6 +15,19 @@ app.set("view engine", "ejs");
 
 app.get("/", (req, res) => {
   res.send("MediVault server is running");
+});
+
+app.use("/api/v1/auth", authRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({
+    message: err.message || "Internal server error",
+  });
 });
 
 const PORT = process.env.PORT || 5000;
