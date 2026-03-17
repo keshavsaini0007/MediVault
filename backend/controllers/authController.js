@@ -20,6 +20,7 @@ const sanitizeUser = (userDoc) => {
 		username: userDoc.username,
 		role: userDoc.role,
 		phone: userDoc.phone,
+		mobile: userDoc.mobile,
 		hospitalId: userDoc.hospitalId,
 		bloodType: userDoc.bloodType,
 		allergies: userDoc.allergies,
@@ -42,6 +43,7 @@ const register = async (req, res, next) => {
 			password,
 			role,
 			phone,
+			mobile,
 			username,
 			hospitalId,
 			bloodType,
@@ -68,6 +70,8 @@ const register = async (req, res, next) => {
 
 		const normalizedEmail = email.toLowerCase().trim();
 		const normalizedUsername = username ? username.toLowerCase().trim() : undefined;
+		const normalizedPhone = phone ? String(phone).trim() : undefined;
+		const normalizedMobile = mobile ? String(mobile).trim() : undefined;
 		const normalizedHospitalId = hospitalId
 			? hospitalId.toUpperCase().trim()
 			: undefined;
@@ -94,6 +98,9 @@ const register = async (req, res, next) => {
 		if (normalizedHospitalId) {
 			duplicateChecks.push({ hospitalId: normalizedHospitalId });
 		}
+		if (normalizedMobile) {
+			duplicateChecks.push({ mobile: normalizedMobile });
+		}
 
 		const existing = await User.findOne({ $or: duplicateChecks });
 		if (existing) {
@@ -106,6 +113,9 @@ const register = async (req, res, next) => {
 			if (normalizedHospitalId && existing.hospitalId === normalizedHospitalId) {
 				return res.status(409).json({ message: "Hospital ID already registered." });
 			}
+			if (normalizedMobile && existing.mobile === normalizedMobile) {
+				return res.status(409).json({ message: "Mobile already registered." });
+			}
 		}
 
 		const passwordHash = await bcrypt.hash(password, 10);
@@ -117,7 +127,8 @@ const register = async (req, res, next) => {
 			username: normalizedUsername,
 			passwordHash,
 			role,
-			phone,
+			phone: normalizedPhone || normalizedMobile,
+			mobile: normalizedMobile || normalizedPhone,
 		};
 
 		if (role === "doctor") {
@@ -162,10 +173,14 @@ const login = async (req, res, next) => {
 			loginIdentifiers.push({ email: email.toLowerCase().trim() });
 		}
 		if (mobile) {
-			loginIdentifiers.push({ phone: mobile.trim() });
+			const normalizedMobile = mobile.trim();
+			loginIdentifiers.push({ phone: normalizedMobile });
+			loginIdentifiers.push({ mobile: normalizedMobile });
 		}
 		if (phone) {
-			loginIdentifiers.push({ phone: phone.trim() });
+			const normalizedPhone = phone.trim();
+			loginIdentifiers.push({ phone: normalizedPhone });
+			loginIdentifiers.push({ mobile: normalizedPhone });
 		}
 		if (username) {
 			loginIdentifiers.push({ username: username.toLowerCase().trim() });
@@ -186,11 +201,13 @@ const login = async (req, res, next) => {
 				loginIdentifiers.push({ hospitalId: rawIdentifier.toUpperCase() });
 			} else if (loginMode === "mobile") {
 				loginIdentifiers.push({ phone: rawIdentifier });
+				loginIdentifiers.push({ mobile: rawIdentifier });
 			} else {
 				loginIdentifiers.push({ email: loweredIdentifier });
 				loginIdentifiers.push({ username: loweredIdentifier });
 				loginIdentifiers.push({ hospitalId: rawIdentifier.toUpperCase() });
 				loginIdentifiers.push({ phone: rawIdentifier });
+				loginIdentifiers.push({ mobile: rawIdentifier });
 			}
 		}
 

@@ -76,6 +76,11 @@ const validateRegister = [
     .trim()
     .isLength({ min: 7, max: 20 })
     .withMessage("Phone must be between 7 and 20 characters."),
+  body("mobile")
+    .optional({ values: "falsy" })
+    .trim()
+    .isLength({ min: 7, max: 20 })
+    .withMessage("Mobile must be between 7 and 20 characters."),
   body("hospitalId")
     .optional({ values: "falsy" })
     .trim()
