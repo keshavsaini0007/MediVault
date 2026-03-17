@@ -15,8 +15,10 @@ const sanitizeUser = (userDoc) => {
 		id: userDoc._id,
 		name: userDoc.name,
 		email: userDoc.email,
+		username: userDoc.username,
 		role: userDoc.role,
 		phone: userDoc.phone,
+		hospitalId: userDoc.hospitalId,
 		bloodType: userDoc.bloodType,
 		allergies: userDoc.allergies,
 		emergencyContact: userDoc.emergencyContact,
@@ -30,7 +32,7 @@ const sanitizeUser = (userDoc) => {
 
 const register = async (req, res, next) => {
 	try {
-		const { name, email, password, role, phone } = req.body;
+		const { name, email, password, role, phone, username, hospitalId } = req.body;
 
 		if (!name || !email || !password || !role) {
 			return res
@@ -42,9 +44,31 @@ const register = async (req, res, next) => {
 			return res.status(400).json({ message: "Role must be patient or doctor." });
 		}
 
-		const existing = await User.findOne({ email: email.toLowerCase() });
+		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedUsername = username ? username.toLowerCase().trim() : undefined;
+		const normalizedHospitalId = hospitalId
+			? hospitalId.toUpperCase().trim()
+			: undefined;
+
+		const duplicateChecks = [{ email: normalizedEmail }];
+		if (normalizedUsername) {
+			duplicateChecks.push({ username: normalizedUsername });
+		}
+		if (normalizedHospitalId) {
+			duplicateChecks.push({ hospitalId: normalizedHospitalId });
+		}
+
+		const existing = await User.findOne({ $or: duplicateChecks });
 		if (existing) {
-			return res.status(409).json({ message: "Email already registered." });
+			if (existing.email === normalizedEmail) {
+				return res.status(409).json({ message: "Email already registered." });
+			}
+			if (normalizedUsername && existing.username === normalizedUsername) {
+				return res.status(409).json({ message: "Username already taken." });
+			}
+			if (normalizedHospitalId && existing.hospitalId === normalizedHospitalId) {
+				return res.status(409).json({ message: "Hospital ID already registered." });
+			}
 		}
 
 		const passwordHash = await bcrypt.hash(password, 10);
@@ -52,7 +76,9 @@ const register = async (req, res, next) => {
 		const user = await User.create({
 			...req.body,
 			name,
-			email: email.toLowerCase(),
+			email: normalizedEmail,
+			username: normalizedUsername,
+			hospitalId: normalizedHospitalId,
 			passwordHash,
 			role,
 			phone,
@@ -67,13 +93,53 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
 	try {
-		const { email, password } = req.body;
+		const { email, mobile, phone, username, hospitalId, identifier, password, role } = req.body;
 
-		if (!email || !password) {
-			return res.status(400).json({ message: "Email and password are required." });
+		if (!password) {
+			return res.status(400).json({ message: "Password is required." });
 		}
 
-		const user = await User.findOne({ email: email.toLowerCase() });
+		const loginIdentifiers = [];
+
+		if (email) {
+			loginIdentifiers.push({ email: email.toLowerCase().trim() });
+		}
+		if (mobile) {
+			loginIdentifiers.push({ phone: mobile.trim() });
+		}
+		if (phone) {
+			loginIdentifiers.push({ phone: phone.trim() });
+		}
+		if (username) {
+			loginIdentifiers.push({ username: username.toLowerCase().trim() });
+		}
+		if (hospitalId) {
+			loginIdentifiers.push({ hospitalId: hospitalId.toUpperCase().trim() });
+		}
+
+		if (identifier) {
+			const rawIdentifier = String(identifier).trim();
+			const loweredIdentifier = rawIdentifier.toLowerCase();
+			loginIdentifiers.push({ email: loweredIdentifier });
+			loginIdentifiers.push({ username: loweredIdentifier });
+			loginIdentifiers.push({ hospitalId: rawIdentifier.toUpperCase() });
+			loginIdentifiers.push({ phone: rawIdentifier });
+		}
+
+		if (!loginIdentifiers.length) {
+			return res.status(400).json({
+				message:
+					"Provide one of: email, mobile, phone, username, hospitalId, or identifier.",
+			});
+		}
+
+		const query = loginIdentifiers.length === 1 ? loginIdentifiers[0] : { $or: loginIdentifiers };
+
+		if (role && ["patient", "doctor"].includes(role)) {
+			query.role = role;
+		}
+
+		const user = await User.findOne(query);
 		if (!user) {
 			return res.status(401).json({ message: "Invalid credentials." });
 		}

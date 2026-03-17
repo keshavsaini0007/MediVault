@@ -13,6 +13,13 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         trim: true
     },
+    username: {
+        type: String,
+        trim: true,
+        lowercase: true,
+        sparse: true,
+        unique: true
+    },
     passwordHash: {
         type: String,
         required: true
@@ -50,6 +57,13 @@ const userSchema = new mongoose.Schema({
     hospitalAffiliation: {
         type: String,
         trim: true  
+    },
+    hospitalId: {
+        type: String,
+        trim: true,
+        uppercase: true,
+        sparse: true,
+        unique: true
     }
 }, { timestamps: true });
 
