@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import Colors from '../../constants/colors';
@@ -41,10 +42,10 @@ const emergency = [
 
 export default function QRProfileScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
 
   return (
-    <DrawerLayout title="Emergency QR Profile" subtitle="Your emergency health card"
-      role="patient" userName="Rahul Singh" userInitial="RS" showBack>
+    <DrawerLayout title="Emergency QR Profile" subtitle="Your emergency health card" showBack>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 

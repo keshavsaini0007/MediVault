@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, Badge, Button } from '../../components/UI';
@@ -62,6 +63,7 @@ const TYPES = ['All', 'symptom', 'dose', 'report', 'record'];
 
 export default function TimelineScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [typeFilter, setTypeFilter] = useState('All');
 
   const filtered = TIMELINE_DATA
@@ -69,8 +71,7 @@ export default function TimelineScreen() {
     .filter(g => g.events.length > 0);
 
   return (
-    <DrawerLayout title="Health Timeline" subtitle="Your complete health story"
-      role="patient" userName="Rahul Singh" userInitial="RS" showBack>
+    <DrawerLayout title="Health Timeline" subtitle="Your complete health story" showBack>
 
       {/* Filter pills */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10 }}>

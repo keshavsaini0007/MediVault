@@ -4,6 +4,7 @@ import {
   Modal, TextInput, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
@@ -12,27 +13,27 @@ type Tab = 'medications' | 'reports' | 'symptoms' | 'timeline';
 
 const medications = [
   { name: 'Paracetamol 500mg', freq: 'Twice daily', adherence: 95, status: 'taken' },
-  { name: 'Vitamin C', freq: 'Once daily', adherence: 90, status: 'taken' },
-  { name: 'Antibiotic', freq: 'Thrice daily', adherence: 88, status: 'missed' },
+  { name: 'Vitamin C',         freq: 'Once daily',  adherence: 90, status: 'taken' },
+  { name: 'Antibiotic',        freq: 'Thrice daily', adherence: 88, status: 'missed' },
 ];
 
 const reports = [
   { icon: '🫁', name: 'Chest X-Ray', date: 'Jan 11, 2024', summary: 'No significant abnormalities detected. Lungs appear clear.', status: 'Normal' },
-  { icon: '🔬', name: 'Blood Test', date: 'Jan 10, 2024', summary: 'Platelet count: 85,000 (Low). WBC elevated. Dengue NS1 Positive.', status: 'Abnormal' },
+  { icon: '🔬', name: 'Blood Test',  date: 'Jan 10, 2024', summary: 'Platelet count: 85,000 (Low). WBC elevated. Dengue NS1 Positive.', status: 'Abnormal' },
 ];
 
 const symptoms = [
   { symptom: 'High Fever (104°F)', date: 'Mar 14, 2026', severity: 'High' },
-  { symptom: 'Severe Headache', date: 'Mar 13, 2026', severity: 'Medium' },
-  { symptom: 'Body Aches', date: 'Mar 12, 2026', severity: 'Medium' },
-  { symptom: 'Nausea', date: 'Mar 11, 2026', severity: 'Low' },
+  { symptom: 'Severe Headache',    date: 'Mar 13, 2026', severity: 'Medium' },
+  { symptom: 'Body Aches',         date: 'Mar 12, 2026', severity: 'Medium' },
+  { symptom: 'Nausea',             date: 'Mar 11, 2026', severity: 'Low' },
 ];
 
 const timeline = [
   { date: 'Mar 14', event: 'High Fever reported', type: 'symptom', icon: '🌡️' },
   { date: 'Mar 12', event: 'Blood Test uploaded — Dengue NS1 Positive', type: 'report', icon: '🔬' },
   { date: 'Mar 10', event: 'Treatment started: Paracetamol + IV Fluids', type: 'medicine', icon: '💊' },
-  { date: 'Mar 8', event: 'Patient registered on MediVault', type: 'system', icon: '✅' },
+  { date: 'Mar 8',  event: 'Patient registered on MediVault', type: 'system', icon: '✅' },
 ];
 
 const patientInfo = [
@@ -47,6 +48,7 @@ const recoveryBars = [2, 3, 3, 4, 4, 5, 6];
 
 export default function PatientDetailsScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>('medications');
   const [showSMS, setShowSMS] = useState(false);
   const [smsMsg, setSmsMsg] = useState('');
@@ -54,14 +56,13 @@ export default function PatientDetailsScreen() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'medications', label: 'Medications' },
-    { key: 'reports', label: 'Reports' },
-    { key: 'symptoms', label: 'Symptoms' },
-    { key: 'timeline', label: 'Timeline' },
+    { key: 'reports',     label: 'Reports'     },
+    { key: 'symptoms',    label: 'Symptoms'    },
+    { key: 'timeline',    label: 'Timeline'    },
   ];
 
   return (
-    <DrawerLayout title="Patient Details" subtitle="Rahul Singh — Dengue"
-      role="doctor" userName="Dr. Sharma" userInitial="DS" showBack>
+    <DrawerLayout title="Patient Details" subtitle="Rahul Singh — Dengue" showBack>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
 
@@ -207,7 +208,7 @@ export default function PatientDetailsScreen() {
               ))}
             </View>
             <View style={{ flexDirection: 'row', marginTop: 4 }}>
-              {['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'].map(d => (
+              {['D1','D2','D3','D4','D5','D6','D7'].map(d => (
                 <Text key={d} style={{ flex: 1, fontSize: 9, color: Colors.gray400, textAlign: 'center' }}>{d}</Text>
               ))}
             </View>

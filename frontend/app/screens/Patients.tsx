@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { StatCard, Card, Badge, Button, ProgressBar, Avatar } from '../../components/UI';
@@ -14,6 +15,7 @@ const STATUS_COLORS: Record<string, { badge: 'danger' | 'warning' | 'success'; b
 
 export default function PatientsScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
 
@@ -23,11 +25,9 @@ export default function PatientsScreen() {
   });
 
   return (
-    <DrawerLayout title="Patients" subtitle="All your patients"
-    role="doctor" userName="Dr. Sharma" userInitial="DS" showBack>
-        <View>
+    <DrawerLayout title="Patients" subtitle="All your patients" showBack>
         <Button label="+ Add" onPress={() => router.push('/screens/PatientDetails')} size="sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-      </View>
+      
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 

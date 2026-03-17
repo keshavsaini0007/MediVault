@@ -4,6 +4,7 @@ import {
   TextInput, Switch, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, CardHeader, Badge, Button } from '../../components/UI';
@@ -14,6 +15,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('profile');
 
@@ -43,8 +45,7 @@ export default function ProfileScreen() {
   const [bloodType, setBloodType] = useState('O+');
 
   return (
-    <DrawerLayout title="Profile & Settings" subtitle="Manage your account"
-      role="patient" userName="Rahul Singh" userInitial="RS" showBack>
+    <DrawerLayout title="Profile & Settings" subtitle="Manage your account" showBack>
 
       {/* Profile Header */}
       <View style={styles.profileBanner}>

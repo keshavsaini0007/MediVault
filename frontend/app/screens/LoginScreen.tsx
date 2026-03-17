@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, KeyboardAvoidingView, Platform, Alert,
+  ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/colors';
 import { Button } from '../../components/UI';
+import { useTheme } from '../../context/ThemeContext';
 
 type Role = 'patient' | 'doctor';
 type LoginMode = 'email' | 'mobile' | 'username' | 'hospitalId';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { setUser, colors } = useTheme();
 
   const [role, setRole] = useState<Role>('patient');
   const [loginMode, setLoginMode] = useState<LoginMode>('email');
@@ -37,6 +39,9 @@ export default function LoginScreen() {
     setError('');
     setTimeout(() => {
       setLoading(false);
+      // ✅ Store role + name globally so notifications/profile stay correct
+      const name = role === 'doctor' ? 'Dr. Sharma' : 'Rahul Singh';
+      setUser(role, name);
       router.replace(role === 'doctor' ? '/screens/DoctorDashboard' : '/screens/PatientDashboard');
     }, 900);
   };
@@ -128,8 +133,8 @@ export default function LoginScreen() {
         <View style={styles.demoBox}>
           <Text style={styles.demoLabel}>QUICK DEMO ACCESS</Text>
           <View style={styles.demoRow}>
-            <Button label="Doctor View" onPress={() => router.replace('/screens/DoctorDashboard')} variant="outline" size="sm" style={{ flex: 1, marginRight: 8 }} />
-            <Button label="Patient View" onPress={() => router.replace('/screens/PatientDashboard')} variant="outline" size="sm" style={{ flex: 1 }} />
+            <Button label="Doctor View"  onPress={() => { setUser('doctor', 'Dr. Sharma'); router.replace('/screens/DoctorDashboard' as any); }} variant="outline" size="sm" style={{ flex: 1, marginRight: 8 }} />
+            <Button label="Patient View" onPress={() => { setUser('patient', 'Rahul Singh'); router.replace('/screens/PatientDashboard' as any); }} variant="outline" size="sm" style={{ flex: 1 }} />
           </View>
         </View>
 

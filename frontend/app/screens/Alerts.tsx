@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { StatCard, Card, Badge, Button } from '../../components/UI';
@@ -16,6 +17,7 @@ const SEV: Record<string, { bg: string; border: string; color: string; badge: 'd
 
 export default function AlertsScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [alerts, setAlerts] = useState(doctorAlerts);
   const [showSMS, setShowSMS] = useState<AlertItem | null>(null);
   const [smsText, setSmsText] = useState('');
@@ -33,8 +35,7 @@ export default function AlertsScreen() {
   const resolved = alerts.filter(a => a.responded);
 
   return (
-    <DrawerLayout title="Alerts" subtitle="Action required"
-      role="doctor" userName="Dr. Sharma" userInitial="DS" showBack>
+    <DrawerLayout title="Alerts" subtitle="Action required" showBack>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 

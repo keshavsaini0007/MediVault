@@ -1,24 +1,18 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  SafeAreaView,
+  SafeAreaView, Animated,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 
-// ─── Navigation definitions (mirrors Sidebar.js exactly) ─────────────────────
 interface NavSection { section: string }
-interface NavLink {
-  label: string;
-  href: string;
-  icon: string;
-  badge?: number;
-}
+interface NavLink { label: string; href: string; icon: string; badge?: number }
 type NavEntry = NavSection | NavLink;
 
 const doctorNav: NavEntry[] = [
   { section: 'Main' },
-  { label: 'Dashboard',     href: '/screens/DoctorDashboard', icon: '▦'          },
+  { label: 'Dashboard',     href: '/screens/DoctorDashboard', icon: '🏠'          },
   { label: 'Patients',      href: '/screens/Patients',         icon: '👥', badge: 28 },
   { label: 'Alerts',        href: '/screens/Alerts',           icon: '🚨', badge: 2  },
   { label: 'Messages',      href: '/screens/Messages',         icon: '💬', badge: 3  },
@@ -31,7 +25,7 @@ const doctorNav: NavEntry[] = [
 
 const patientNav: NavEntry[] = [
   { section: 'My Health' },
-  { label: 'Dashboard',     href: '/screens/PatientDashboard', icon: '▦'          },
+  { label: 'Dashboard',     href: '/screens/PatientDashboard', icon: '🏠'          },
   { label: 'Medicines',     href: '/screens/Medicines',        icon: '💊'          },
   { label: 'My Records',    href: '/screens/Records',          icon: '📁'          },
   { label: 'Reports',       href: '/screens/Reports',          icon: '📋'          },
@@ -45,110 +39,104 @@ const patientNav: NavEntry[] = [
   { label: 'Logout',        href: '/screens/SplashScreen',     icon: '🚪'          },
 ];
 
-// ─── Type guards ──────────────────────────────────────────────────────────────
-function isSection(entry: NavEntry): entry is NavSection {
-  return 'section' in entry;
+function isSection(e: NavEntry): e is NavSection { return 'section' in e; }
+
+function NavItem({ item, isActive, onPress }: { item: NavLink; isActive: boolean; onPress: () => void }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const press   = () => Animated.spring(scale, { toValue: 0.94, useNativeDriver: true, tension: 200 }).start();
+  const release = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200 }).start();
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <TouchableOpacity onPress={onPress} onPressIn={press} onPressOut={release}
+        activeOpacity={1}
+        style={[
+          s.navItem,
+          isActive && s.navItemActive,
+        ]}>
+        <Text style={[s.navIcon, isActive && { opacity: 1 }]}>{item.icon}</Text>
+        <Text style={[s.navLabel, isActive && s.navLabelActive]}>{item.label}</Text>
+        {item.badge ? (
+          <View style={s.badge}><Text style={s.badgeText}>{item.badge}</Text></View>
+        ) : null}
+        {isActive && <View style={s.activeBar} />}
+      </TouchableOpacity>
+    </Animated.View>
+  );
 }
 
-// ─── Props ────────────────────────────────────────────────────────────────────
 interface SidebarProps {
   role?: 'doctor' | 'patient';
   userName?: string;
   userInitial?: string;
-  /** Called when any nav item is pressed (use to close drawer on mobile) */
   onClose?: () => void;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-export default function Sidebar({
-  role = 'patient',
-  userName = 'User',
-  userInitial = 'U',
-  onClose,
-}: SidebarProps) {
+export default function Sidebar({ role: roleProp, userName: userNameProp, userInitial: userInitialProp, onClose }: SidebarProps) {
   const router   = useRouter();
   const pathname = usePathname();
-  const { colors } = useTheme();
+  const { isDark, role: ctxRole, userName: ctxUserName, userInitial: ctxUserInitial } = useTheme();
+
+  // ✅ Always use ThemeContext — never trust prop values (they can be stale)
+  const role        = ctxRole;
+  const userName    = ctxUserName;
+  const userInitial = ctxUserInitial;
 
   const navItems = role === 'doctor' ? doctorNav : patientNav;
-  const homePath = role === 'doctor' ? '/screens/DoctorDashboard' : '/screens/PatientDashboard';
+  const home     = role === 'doctor' ? '/screens/DoctorDashboard' : '/screens/PatientDashboard';
 
-  const handleNav = (href: string) => {
-    router.push(href as any);
-    onClose?.();
-  };
+  const handleNav = (href: string) => { router.push(href as any); onClose?.(); };
+
+  const bgTop    = role === 'doctor' ? (isDark ? '#0d1a3a' : '#0C2461') : (isDark ? '#062322' : '#053B3B');
+  const bgBottom = role === 'doctor' ? (isDark ? '#1a2d5a' : '#1e3a8a') : (isDark ? '#0a2c2c' : '#0B4F4F');
 
   return (
-    <View style={[styles.sidebar, { backgroundColor: colors.sidebarBg }]}>
+    <View style={[s.sidebar, { backgroundColor: bgTop }]}>
       <SafeAreaView style={{ flex: 1 }}>
 
-        {/* ── Logo ─────────────────────────────────────── */}
-        <TouchableOpacity
-          style={styles.logoArea}
-          onPress={() => handleNav(homePath)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.logoIcon}>
-            <Text style={styles.logoIconText}>+</Text>
+        {/* Logo */}
+        <TouchableOpacity style={[s.logoArea, { borderBottomColor: 'rgba(255,255,255,0.1)' }]}
+          onPress={() => handleNav(home)} activeOpacity={0.8}>
+          <View style={[s.logoIcon, { backgroundColor: role === 'doctor' ? '#2E6AE6' : '#0D9488' }]}>
+            <Text style={{ color: 'white', fontSize: 20, fontWeight: '900' }}>✚</Text>
           </View>
           <View>
-            <Text style={styles.logoText}>MediVault</Text>
-            <Text style={styles.logoSub}>HEALTH PLATFORM</Text>
+            <Text style={s.logoText}>MediVault</Text>
+            <Text style={s.logoSub}>HEALTH PLATFORM</Text>
           </View>
         </TouchableOpacity>
 
-        {/* ── Nav ──────────────────────────────────────── */}
-        <ScrollView
-          style={styles.nav}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 16 }}
-        >
+        {/* Nav */}
+        <ScrollView style={s.nav} showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}>
           {navItems.map((item, i) => {
             if (isSection(item)) {
-              return (
-                <Text key={i} style={styles.sectionLabel}>{item.section}</Text>
-              );
+              return <Text key={i} style={s.sectionLabel}>{item.section}</Text>;
             }
-
-            const isActive = pathname === item.href;
+            const active = pathname === item.href;
             return (
-              <TouchableOpacity
-                key={item.href}
-                onPress={() => handleNav(item.href)}
-                activeOpacity={0.75}
-                style={[
-                  styles.navItem,
-                  isActive && [styles.navItemActive, { backgroundColor: colors.sidebarActive }],
-                ]}
-              >
-                <Text style={styles.navIcon}>{item.icon}</Text>
-                <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
-                  {item.label}
-                </Text>
-                {item.badge ? (
-                  <View style={[styles.badge, { backgroundColor: colors.danger }]}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
-                  </View>
-                ) : null}
-              </TouchableOpacity>
+              <NavItem key={item.href} item={item} isActive={active}
+                onPress={() => handleNav(item.href)} />
             );
           })}
         </ScrollView>
 
-        {/* ── Footer user ───────────────────────────────── */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.footerUser} activeOpacity={0.7}>
-            <View style={[styles.userAvatar, { backgroundColor: colors.primaryLight }]}>
-              <Text style={styles.userAvatarText}>{userInitial}</Text>
+        {/* Footer */}
+        <View style={[s.footer, { borderTopColor: 'rgba(255,255,255,0.08)', backgroundColor: bgBottom }]}>
+          <View style={s.footerUser}>
+            <View style={[s.userAvatar, { backgroundColor: role === 'doctor' ? '#2E6AE6' : '#0D9488' }]}>
+              <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>{(userInitial || 'U').slice(0, 2)}</Text>
             </View>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName} numberOfLines={1}>{userName}</Text>
-              <Text style={styles.userRole}>
-                {role === 'doctor' ? 'Physician' : 'Patient'}
+            <View style={{ flex: 1 }}>
+              <Text style={s.userName} numberOfLines={1}>{userName}</Text>
+              <Text style={s.userRole}>{role === 'doctor' ? '👨‍⚕️ Physician' : '🧑 Patient'}</Text>
+            </View>
+            <View style={[s.roleTag, { backgroundColor: role === 'doctor' ? '#2E6AE620' : '#0D948820' }]}>
+              <Text style={[s.roleTagText, { color: role === 'doctor' ? '#60A5FA' : '#34D399' }]}>
+                {role === 'doctor' ? 'MD' : 'PT'}
               </Text>
             </View>
-            <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>⋮</Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
       </SafeAreaView>
@@ -156,140 +144,54 @@ export default function Sidebar({
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  sidebar: {
-    width: 220,
-    flex: 1,
-  },
+const s = StyleSheet.create({
+  sidebar: { flex: 1 },
   logoArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    padding: 20, paddingBottom: 18, borderBottomWidth: 1,
   },
   logoIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#2E6AE6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#2E6AE6',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 4,
+    width: 38, height: 38, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6, elevation: 4,
   },
-  logoIconText: { color: 'white', fontSize: 18, fontWeight: '800' },
-  logoText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: 'white',
-    letterSpacing: -0.3,
-  },
-  logoSub: {
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.4)',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginTop: 1,
-  },
+  logoText: { fontSize: 16, fontWeight: '900', color: 'white', letterSpacing: -0.5 },
+  logoSub: { fontSize: 8, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 2 },
 
-  nav: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingTop: 16,
-  },
+  nav: { flex: 1, paddingHorizontal: 10, paddingTop: 14 },
   sectionLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.3)',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 6,
+    fontSize: 9, fontWeight: '800', color: 'rgba(255,255,255,0.3)',
+    letterSpacing: 1.5, textTransform: 'uppercase',
+    paddingHorizontal: 10, paddingTop: 14, paddingBottom: 6,
   },
   navItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 2,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 10, paddingHorizontal: 12,
+    borderRadius: 12, marginBottom: 2,
+    position: 'relative', overflow: 'hidden',
   },
   navItemActive: {
-    shadowColor: '#2E6AE6',
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
-  navIcon: {
-    width: 18,
-    textAlign: 'center',
-    fontSize: 15,
-  },
-  navLabel: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.6)',
-  },
-  navLabelActive: {
-    color: 'white',
-    fontWeight: '600',
+  navIcon: { fontSize: 16, width: 22, textAlign: 'center', opacity: 0.75 },
+  navLabel: { flex: 1, fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.65)' },
+  navLabelActive: { color: 'white', fontWeight: '700' },
+  activeBar: {
+    position: 'absolute', right: 0, top: 8, bottom: 8,
+    width: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.8)',
   },
   badge: {
-    borderRadius: 20,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    minWidth: 18,
-    alignItems: 'center',
+    backgroundColor: '#FF4444', borderRadius: 10,
+    paddingHorizontal: 6, paddingVertical: 2, minWidth: 20, alignItems: 'center',
   },
-  badgeText: {
-    color: 'white',
-    fontSize: 9,
-    fontWeight: '700',
-  },
+  badgeText: { color: 'white', fontSize: 9, fontWeight: '800' },
 
-  footer: {
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-  },
-  footerUser: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 8,
-    borderRadius: 8,
-  },
-  userAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userAvatarText: {
-    color: 'white',
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  userInfo: { flex: 1, minWidth: 0 },
-  userName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: 'white',
-  },
-  userRole: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
-  },
+  footer: { borderTopWidth: 1, padding: 12 },
+  footerUser: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8, borderRadius: 12 },
+  userAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' },
+  userName: { fontSize: 13, fontWeight: '700', color: 'white' },
+  userRole: { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 1 },
+  roleTag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  roleTagText: { fontSize: 10, fontWeight: '800' },
 });

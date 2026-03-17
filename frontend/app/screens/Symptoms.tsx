@@ -4,6 +4,7 @@ import {
   TextInput, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
@@ -25,6 +26,7 @@ const CHIPS = ['Fever', 'Headache', 'Cough', 'Nausea', 'Body Ache', 'Fatigue', '
 
 export default function SymptomsScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<typeof mockResults | null>(null);
@@ -41,8 +43,7 @@ export default function SymptomsScreen() {
   };
 
   return (
-    <DrawerLayout title="Symptom Checker" subtitle="AI-powered triage assistant"
-      role="patient" userName="Rahul Singh" userInitial="RS" showBack>
+    <DrawerLayout title="Symptom Checker" subtitle="AI-powered triage assistant" showBack>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 

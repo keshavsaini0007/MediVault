@@ -4,6 +4,7 @@ import {
   Modal, TextInput, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { StatCard, Card, CardHeader, Badge, Button } from '../../components/UI';
@@ -51,6 +52,7 @@ const TYPE_STYLE: Record<string, { bg: string; color: string; badge: 'danger' | 
 
 export default function RecordsScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [records, setRecords] = useState(RECORDS);
   const [showAdd, setShowAdd] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(1);
@@ -68,11 +70,9 @@ export default function RecordsScreen() {
   const visitTypes: RecordItem['type'][] = ['OPD', 'Admission', 'Check-up', 'Emergency'];
 
   return (
-    <DrawerLayout title="Medical Records" subtitle="Complete health history"
-      role="patient" userName="Rahul Singh" userInitial="RS" showBack>
-      <View style={{ paddingHorizontal: 16, marginBottom: 10, flexDirection: 'row', justifyContent: 'flex-end' }}>
+    <DrawerLayout title="Medical Records" subtitle="Complete health history" showBack>
         <Button label="+ Add" onPress={() => setShowAdd(true)} size="sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-      </View>
+      
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, Badge, Button } from '../../components/UI';
@@ -21,6 +22,7 @@ const TAG_TYPE: Record<string, 'danger' | 'warning' | 'primary' | 'success' | 't
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [notifs, setNotifs] = useState(PATIENT_NOTIFS);
   const [filter, setFilter] = useState('All');
 
@@ -37,11 +39,9 @@ export default function NotificationsScreen() {
   });
 
   return (
-    <DrawerLayout title="Notifications" subtitle="Stay updated"
-      role="patient" userName="Rahul Singh" userInitial="RS" showBack>
-      <View>
+    <DrawerLayout title="Notifications" subtitle="Stay updated" showBack>
         {unread > 0 && <Button label="Mark all read" onPress={markAll} size="sm" variant="outline" style={{ borderColor: 'rgba(255,255,255,0.4)' }} />}
-      </View>
+      
 
       {/* Filters */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10 }}>

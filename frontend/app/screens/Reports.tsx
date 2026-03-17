@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, CardHeader, Badge, Button } from '../../components/UI';
@@ -20,6 +21,7 @@ const statusBadge: Record<string, 'success' | 'danger'> = {
 
 export default function ReportsScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const [selectedType, setSelectedType] = useState('X-Ray');
@@ -33,8 +35,7 @@ export default function ReportsScreen() {
   };
 
   return (
-    <DrawerLayout title="Reports & Tests" subtitle="Upload and manage your reports"
-      role="patient" userName="Rahul Singh" userInitial="RS" showBack>
+    <DrawerLayout title="Reports & Tests" subtitle="Upload and manage your reports" showBack>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 

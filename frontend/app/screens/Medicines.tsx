@@ -4,6 +4,7 @@ import {
   Modal, TextInput, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { StatCard, Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
@@ -13,6 +14,7 @@ const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export default function MedicinesScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [showAdd, setShowAdd] = useState(false);
   const [doseStates, setDoseStates] = useState<Record<number, boolean>>({ });
   const [medName, setMedName] = useState('');
@@ -22,7 +24,6 @@ export default function MedicinesScreen() {
 
   return (
     <DrawerLayout title="Medicine Tracker" subtitle="Track your medications and adherence"
-      role="patient" userName="Rahul Singh" userInitial="RS"
       showBack headerRight={<Button label="+ Add" onPress={() => setShowAdd(true)} size="sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />}
     >
 

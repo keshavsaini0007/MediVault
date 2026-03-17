@@ -4,6 +4,7 @@ import {
   TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 
@@ -28,6 +29,7 @@ const MESSAGES: Record<number, Message[]> = {
 
 export default function MessagesScreen() {
   const router = useRouter();
+  const { role, userName, userInitial, colors } = useTheme();
   const [activeConv, setActiveConv] = useState(1);
   const [messages, setMessages] = useState(MESSAGES);
   const [input, setInput] = useState('');
@@ -52,8 +54,7 @@ export default function MessagesScreen() {
 
   if (showList) {
     return (
-      <DrawerLayout title="Messages" subtitle="Patient communications"
-        role="doctor" userName="Dr. Sharma" userInitial="DS">
+      <DrawerLayout title="Messages" subtitle="Patient communications">
         {/* Search */}
         <View style={styles.searchBox}>
           <Text style={{ marginRight: 6, color: Colors.gray400 }}>🔍</Text>
@@ -95,9 +96,8 @@ export default function MessagesScreen() {
   // Chat view
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <DrawerLayout title={activePatient?.name || 'Chat'} subtitle={activePatient?.condition}
-        role="doctor" userName="Dr. Sharma" userInitial="DS" showBack>
-        <View style={styles.chatHeader}>
+      <DrawerLayout title={activePatient?.name || 'Chat'} subtitle={activePatient?.condition} showBack>
+        <View>
           <TouchableOpacity onPress={() => setShowList(true)} style={{ marginRight: 12 }}>
             <Text style={{ color: 'white', fontSize: 18 }}>←</Text>
           </TouchableOpacity>
@@ -148,7 +148,7 @@ export default function MessagesScreen() {
       </DrawerLayout>
     </KeyboardAvoidingView>
   );
-}
+} 
 
 const styles = StyleSheet.create({
   searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border, paddingHorizontal: 16, paddingVertical: 10 },
