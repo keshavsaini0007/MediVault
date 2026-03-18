@@ -9,11 +9,9 @@ import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, CardHeader, Badge, Button } from '../../components/UI';
 
-const reports = [
-  { id: 1, icon: '🫁', name: 'Chest X-Ray',  date: 'April 12, 2024', type: 'X-Ray',   status: 'Reviewed', summary: 'No significant abnormalities. Lungs appear clear with normal cardiothoracic ratio.' },
-  { id: 2, icon: '🔬', name: 'Blood Test',   date: 'April 5, 2024',  type: 'Lab',     status: 'Abnormal', summary: 'Platelet count low (85,000). Dengue NS1 Antigen: Positive. Immediate attention required.' },
-  { id: 3, icon: '🔊', name: 'Ultrasound',   date: 'March 20, 2024', type: 'Imaging', status: 'Normal',   summary: 'Abdominal ultrasound normal. No hepatomegaly or splenomegaly detected.' },
-];
+
+// TODO: Replace with real reports from API or context
+const reports: any[] = [];
 
 const statusBadge: Record<string, 'success' | 'danger'> = {
   Normal: 'success', Reviewed: 'success', Abnormal: 'danger',

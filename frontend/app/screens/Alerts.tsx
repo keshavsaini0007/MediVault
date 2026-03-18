@@ -9,17 +9,20 @@ import Colors from '../../constants/colors';
 import { StatCard, Card, Badge, Button } from '../../components/UI';
 
 const SEV: Record<string, { bg: string; border: string; color: string; badge: 'danger' | 'warning' | 'primary' }> = {
-  critical: { bg: Colors.dangerSoft,  border: '#FECACA', color: Colors.danger,  badge: 'danger'  },
-  warning:  { bg: Colors.warningSoft, border: '#FDE68A', color: Colors.warning, badge: 'warning' },
-  info:     { bg: Colors.primarySoft, border: '#BFDBFE', color: Colors.primary, badge: 'primary' },
+  critical: { bg: Colors.dangerSoft, border: '#FECACA', color: Colors.danger, badge: 'danger' },
+  warning: { bg: Colors.warningSoft, border: '#FDE68A', color: Colors.warning, badge: 'warning' },
+  info: { bg: Colors.primarySoft, border: '#BFDBFE', color: Colors.primary, badge: 'primary' },
 };
 
 export default function AlertsScreen() {
   const router = useRouter();
   const { userName, userInitial, colors } = useTheme();
 
-  // ✅ Read alerts from context — persists across navigation, never resets
-  const { alerts, respondAlert, dismissAlert, clearAlerts } = useBadges();
+  // TODO: Replace with real alerts from API or context
+  const alerts: any[] = [];
+  const respondAlert = (id?: any) => { };
+  const dismissAlert = (id?: any) => { };
+  const clearAlerts = () => { };
 
   const [showSMS, setShowSMS] = useState<typeof alerts[0] | null>(null);
   const [smsText, setSmsText] = useState('');
@@ -34,7 +37,7 @@ export default function AlertsScreen() {
     setSmsText('');
   };
 
-  const pending  = alerts.filter(a => !a.responded);
+  const pending = alerts.filter(a => !a.responded);
   const resolved = alerts.filter(a => a.responded);
 
   return (
@@ -168,17 +171,17 @@ export default function AlertsScreen() {
 }
 
 const styles = StyleSheet.create({
-  statsGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  statHalf:     { width: '48%' },
-  alertCard:    { borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderLeftWidth: 4 },
-  alertRow:     { flexDirection: 'row', gap: 12 },
-  alertAvatar:  { width: 44, height: 44, borderRadius: 22, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', borderWidth: 2, flexShrink: 0 },
-  emptyBox:     { alignItems: 'center', paddingVertical: 48 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  statHalf: { width: '48%' },
+  alertCard: { borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderLeftWidth: 4 },
+  alertRow: { flexDirection: 'row', gap: 12 },
+  alertAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', borderWidth: 2, flexShrink: 0 },
+  emptyBox: { alignItems: 'center', paddingVertical: 48 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalCard:    { backgroundColor: Colors.white, borderRadius: 16, width: '100%' },
-  modalHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
-  modalTitle:   { fontSize: 15, fontWeight: '700', color: Colors.gray800 },
+  modalCard: { backgroundColor: Colors.white, borderRadius: 16, width: '100%' },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  modalTitle: { fontSize: 15, fontWeight: '700', color: Colors.gray800 },
   recipientBox: { backgroundColor: Colors.primarySoft, borderRadius: 8, padding: 10, marginBottom: 14 },
-  label:        { fontSize: 12, fontWeight: '600', color: Colors.gray700, marginBottom: 6 },
-  input:        { backgroundColor: Colors.gray50, borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, fontSize: 14, color: Colors.gray900 },
+  label: { fontSize: 12, fontWeight: '600', color: Colors.gray700, marginBottom: 6 },
+  input: { backgroundColor: Colors.gray50, borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, fontSize: 14, color: Colors.gray900 },
 });

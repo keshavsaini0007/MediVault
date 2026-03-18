@@ -5,10 +5,10 @@ import Svg, { Polyline } from 'react-native-svg';
 import DrawerLayout from '../../components/DrawerLayout';
 import { StatCard, Card, CardHeader, Badge, Button, ProgressBar, Avatar } from '../../components/UI';
 import { useTheme } from '../../context/ThemeContext';
-import { allPatients, doctorAlerts } from '../../data/mockData';
+// TODO: Replace with real patients and alerts from API or context
 
-const weekBars = [65, 72, 68, 80, 75, 87, 92];
-const weekDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const weekBars: number[] = [];
+const weekDays: string[] = [];
 
 function MiniTrend({ data, color }: { data: number[]; color: string }) {
   const max = Math.max(...data);
@@ -22,31 +22,19 @@ function MiniTrend({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-function AlertCard({ alert }: { alert: typeof doctorAlerts[0] }) {
+// Example AlertCard placeholder
+function AlertCard({ alert }: { alert: any }) {
   const { colors } = useTheme();
-  const scale = useRef(new Animated.Value(1)).current;
-  const isCrit = alert.severity === 'critical';
-  const bg     = isCrit ? colors.dangerSoft  : colors.warningSoft;
-  const border = isCrit ? colors.danger      : colors.warning;
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
-      <TouchableOpacity activeOpacity={0.9}
-        onPressIn={() => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, tension: 200 }).start()}
-        onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200 }).start()}
-        style={[s.alertCard, { backgroundColor: bg, borderColor: border + '55', borderLeftColor: border }]}>
-        <View style={[s.alertDot, { backgroundColor: border }]} />
-        <View style={{ flex: 1 }}>
-          <Text style={[s.alertName, { color: colors.textPrimary }]}>{alert.patient}</Text>
-          <Text style={[s.alertIssue, { color: colors.textMuted }]}>{alert.issue}</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end', gap: 4 }}>
-          <Badge label={alert.issue} type={isCrit ? 'danger' : 'warning'} />
-          <Text style={{ fontSize: 10, color: colors.textFaint }}>{alert.time}</Text>
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
+    <View style={{ padding: 12, backgroundColor: colors.bgCard, borderRadius: 8, marginBottom: 8 }}>
+      <Text style={{ fontWeight: '700', color: colors.textPrimary }}>{alert?.patient || 'Unknown'}</Text>
+      <Text style={{ color: colors.textMuted }}>{alert?.issue || 'No issue'}</Text>
+    </View>
   );
 }
+// TODO: Fetch patients and alerts from API or context
+const doctorAlerts: any[] = [];
+const allPatients: any[] = [];
 
 // ── Fix: extract QuickAction item into its own component so useRef is legal ──
 function QuickActionItem({ icon, label, route, bg, fg }: {
@@ -82,7 +70,7 @@ function PatientRow({ p }: { p: typeof allPatients[0] }) {
         onPress={() => router.push({ pathname: '/screens/PatientDetails', params: { id: p.id } } as any)}
         style={[s.patientRow, { backgroundColor: colors.bgCardHover, borderColor: colors.border }]}
         activeOpacity={1}>
-        <Avatar initials={p.name.split(' ').map(n => n[0]).join('')} size={40} />
+        <Avatar initials={p.name.split(' ').map((n: any[]) => n[0]).join('')} size={40} />
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textPrimary }}>{p.name}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>

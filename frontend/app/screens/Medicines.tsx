@@ -8,7 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { StatCard, Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
-import { medicinesData, todayScheduleData } from '../../data/mockData';
+import { useEffect } from 'react';
 
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -16,9 +16,40 @@ export default function MedicinesScreen() {
   const router = useRouter();
   const { role, userName, userInitial, colors } = useTheme();
   const [showAdd, setShowAdd] = useState(false);
-  const [doseStates, setDoseStates] = useState<Record<number, boolean>>({ });
+  const [doseStates, setDoseStates] = useState<Record<number, boolean>>({});
   const [medName, setMedName] = useState('');
   const [dosage, setDosage] = useState('');
+  const [medicines, setMedicines] = useState<any[]>([]);
+  const [schedule, setSchedule] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        // TODO: Replace token with actual auth token from your auth flow
+        const token = '';
+        const response = await fetch('http://localhost:5000/api/v1/medicine', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch medicines');
+        }
+        const data = await response.json();
+        setMedicines(data.medicines || []);
+        // For schedule, you may need a separate endpoint or compute from medicines
+        // setSchedule(...)
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch medicines');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const markTaken = (idx: number) => setDoseStates(prev => ({ ...prev, [idx]: true }));
 
@@ -28,48 +59,51 @@ export default function MedicinesScreen() {
     >
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+        {loading ? (
+          <Text>Loading medicines...</Text>
+        ) : error ? (
+          <Text style={{ color: 'red' }}>{error}</Text>
+        ) : (
+          <>
+            {/* Stats */}
+            <View style={styles.statsGrid}>
+              <View style={styles.statHalf}><StatCard icon="💊" value={medicines.length.toString()} label="Active Medicines" /></View>
+              {/* You may want to compute streak, adherence, doses left from medicines data */}
+              <View style={styles.statHalf}><StatCard icon="🔥" value="-" label="Day Streak" iconBg={Colors.accentSoft} valueColor={Colors.accent} /></View>
+              <View style={styles.statHalf}><StatCard icon="✅" value="-" label="Overall Adherence" iconBg={Colors.successSoft} valueColor={Colors.success} /></View>
+              <View style={styles.statHalf}><StatCard icon="⏰" value="-" label="Today's Doses Left" iconBg={Colors.warningSoft} /></View>
+            </View>
 
-        {/* Stats */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statHalf}><StatCard icon="💊" value="3" label="Active Medicines" /></View>
-          <View style={styles.statHalf}><StatCard icon="🔥" value="7" label="Day Streak" iconBg={Colors.accentSoft} valueColor={Colors.accent} /></View>
-          <View style={styles.statHalf}><StatCard icon="✅" value="88%" label="Overall Adherence" iconBg={Colors.successSoft} valueColor={Colors.success} /></View>
-          <View style={styles.statHalf}><StatCard icon="⏰" value="4" label="Today's Doses Left" iconBg={Colors.warningSoft} /></View>
-        </View>
-
-        {/* Today's Schedule */}
-        <Card>
-          <CardHeader title="📅 Today's Schedule" right={<Badge label="Mar 14, 2026" />} />
-          <View style={{ paddingHorizontal: 16 }}>
-            {todayScheduleData.map((dose, i) => (
-              <View key={i} style={[styles.doseRow, i < todayScheduleData.length - 1 && { borderBottomWidth: 1, borderBottomColor: Colors.gray100 }]}>
-                <Text style={styles.doseTime}>{dose.time}</Text>
-                <View style={[styles.doseDot, { backgroundColor: dose.color }]} />
-                <Text style={styles.doseName}>{dose.med}</Text>
-                {dose.status === 'taken' || doseStates[i] ? (
-                  <Badge label="✓ Taken" type="success" />
-                ) : dose.status === 'due' ? (
-                  <Button label="Mark Taken" onPress={() => markTaken(i)} size="sm" />
-                ) : (
-                  <Badge label="Later" type="default" />
-                )}
+            {/* Medicines List */}
+            <Card>
+              <CardHeader title="💊 Medicines" />
+              <View style={{ paddingHorizontal: 16 }}>
+                {medicines.map((med, i) => (
+                  <View key={med._id || i} style={[styles.doseRow, i < medicines.length - 1 && { borderBottomWidth: 1, borderBottomColor: Colors.gray100 }]}>
+                    <Text style={styles.doseTime}>{med.timeSlots?.join(', ')}</Text>
+                    <View style={[styles.doseDot, { backgroundColor: Colors.primary }]} />
+                    <Text style={styles.doseName}>{med.name} {med.dosage}</Text>
+                    {/* Add more medicine info as needed */}
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-        </Card>
+            </Card>
+          </>
+        )}
 
         {/* Weekly Adherence */}
         <Card>
           <CardHeader title="📊 Weekly Adherence" />
           <View style={{ padding: 16 }}>
-            {medicinesData.map(med => (
+            {medicines.map(med => (
               <View key={med.id} style={{ marginBottom: 18 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.gray800 }}>{med.name}</Text>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: med.adherence >= 90 ? Colors.success : Colors.warning }}>{med.adherence}%</Text>
                 </View>
                 <View style={styles.doseGrid}>
-                  {med.doses.map((taken, i) => (
+                  {med.doses.map((taken: boolean, i: number) => (
+
                     <View key={i} style={[styles.doseCell, { backgroundColor: taken ? Colors.success : Colors.danger, opacity: taken ? 1 : 0.7 }]}>
                       <Text style={{ color: 'white', fontSize: 10, fontWeight: '700' }}>{taken ? '✓' : '✗'}</Text>
                     </View>
@@ -89,8 +123,8 @@ export default function MedicinesScreen() {
         <Card>
           <CardHeader title="💊 My Medicines" />
           <View style={{ padding: 16 }}>
-            {medicinesData.map((m, i) => (
-              <View key={m.id} style={[styles.medCard, i < medicinesData.length - 1 && { borderBottomWidth: 1, borderBottomColor: Colors.gray100 }]}>
+            {medicines.map((m, i) => (
+              <View key={m.id} style={[styles.medCard, i < medicines.length - 1 && { borderBottomWidth: 1, borderBottomColor: Colors.gray100 }]}>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <Text style={{ fontWeight: '700', fontSize: 14, color: Colors.gray800 }}>{m.name}</Text>
@@ -106,8 +140,8 @@ export default function MedicinesScreen() {
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6, marginLeft: 8 }}>
-                  <Button label="Edit" onPress={() => {}} variant="outline" size="sm" />
-                  <Button label="✕" onPress={() => {}} variant="danger" size="sm" />
+                  <Button label="Edit" onPress={() => { }} variant="outline" size="sm" />
+                  <Button label="✕" onPress={() => { }} variant="danger" size="sm" />
                 </View>
               </View>
             ))}

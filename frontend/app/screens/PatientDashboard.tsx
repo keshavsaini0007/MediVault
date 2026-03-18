@@ -5,20 +5,11 @@ import DrawerLayout from '../../components/DrawerLayout';
 import { StatCard, Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
 import { useTheme } from '../../context/ThemeContext';
 
-const medications = [
-  { id: 1, time: '8:00 AM', name: 'Paracetamol 500mg', color: '#EF4444', status: 'due' },
-  { id: 2, time: '2:00 PM', name: 'Vitamin C 1000mg',  color: '#F59E0B', status: 'upcoming' },
-  { id: 3, time: '8:00 PM', name: 'Antibiotic 250mg',  color: '#10B981', status: 'upcoming' },
-];
-
-const weekBars = [75, 82, 78, 90, 85, 92, 88];
-const weekDays = ['M','T','W','T','F','S','S'];
-
-const recentReports = [
-  { icon: '🔬', name: 'Blood Test',  date: 'Apr 5, 2024',  tag: 'Normal'   },
-  { icon: '🫁', name: 'Chest X-Ray', date: 'Apr 12, 2024', tag: 'Reviewed' },
-  { icon: '🔊', name: 'Ultrasound',  date: 'Mar 20, 2024', tag: 'Pending'  },
-];
+// TODO: Replace with real medications and reports from API or context
+const medications: any[] = [];
+const weekBars: number[] = [];
+const weekDays: string[] = [];
+const recentReports: any[] = [];
 const tagType: Record<string, 'success'|'primary'|'warning'> = {
   Normal: 'success', Reviewed: 'primary', Pending: 'warning',
 };

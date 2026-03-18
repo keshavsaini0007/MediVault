@@ -6,57 +6,23 @@ import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, Badge, Button } from '../../components/UI';
 
-const TIMELINE_DATA = [
-  {
-    date: 'Mar 14, 2026', day: 'Today',
-    events: [
-      { id: 1, type: 'symptom', icon: '🌡️', title: 'High Fever Reported', detail: 'Temperature: 104°F, Headache, Body aches. Reported via Symptom Checker.', severity: 'critical' },
-      { id: 2, type: 'dose', icon: '💊', title: 'Morning Doses Taken', detail: 'Paracetamol 500mg ✓  ·  Antibiotic 250mg ✓', severity: 'success' },
-    ],
-  },
-  {
-    date: 'Mar 12, 2026', day: '2 Days Ago',
-    events: [
-      { id: 3, type: 'report', icon: '🔬', title: 'Blood Test Uploaded', detail: 'Dengue NS1 Antigen: Positive · Platelet count: 85,000 (Low). AI Summary available.', severity: 'warning' },
-      { id: 4, type: 'dose', icon: '💊', title: 'All Doses Taken', detail: 'Paracetamol ✓  ·  Vitamin C ✓  ·  Antibiotic ✓', severity: 'success' },
-    ],
-  },
-  {
-    date: 'Mar 10, 2026', day: '4 Days Ago',
-    events: [
-      { id: 5, type: 'record', icon: '🏥', title: 'OPD Visit — Dr. Meera Kapoor', detail: 'Diagnosis: Dengue Fever. Treatment started: Paracetamol + IV Fluids + Antibiotic.', severity: 'info' },
-      { id: 6, type: 'report', icon: '🫁', title: 'Chest X-Ray Uploaded', detail: 'No significant abnormalities. Lungs clear. AI reviewed.', severity: 'success' },
-    ],
-  },
-  {
-    date: 'Jan 5, 2026', day: 'Jan 5',
-    events: [
-      { id: 7, type: 'record', icon: '✅', title: 'Annual Health Check-up', detail: 'All vitals normal. Slight elevation in blood sugar — dietary advice given.', severity: 'success' },
-      { id: 8, type: 'report', icon: '🔬', title: 'Full Blood Panel Uploaded', detail: 'HbA1c: 5.8%, Blood sugar: 102 mg/dL, Cholesterol: 185 mg/dL.', severity: 'success' },
-    ],
-  },
-  {
-    date: 'Mar 8, 2026', day: 'Account Created',
-    events: [
-      { id: 9, type: 'system', icon: '🎉', title: 'Joined MediVault', detail: 'Patient profile created. Emergency QR generated. Doctor assigned.', severity: 'info' },
-    ],
-  },
-];
+// TODO: Replace with real timeline data from API or context
+const TIMELINE_DATA: any[] = [];
 
 const TYPE_META: Record<string, { color: string; label: string; bg: string }> = {
-  symptom:  { color: Colors.danger,   label: 'Symptom',   bg: Colors.dangerSoft  },
-  dose:     { color: Colors.success,  label: 'Medication', bg: Colors.successSoft },
-  report:   { color: Colors.primary,  label: 'Report',    bg: Colors.primarySoft },
-  record:   { color: Colors.teal,     label: 'Visit',     bg: Colors.tealSoft    },
-  medicine: { color: Colors.warning,  label: 'Medicine',  bg: Colors.warningSoft },
-  system:   { color: Colors.gray500,  label: 'System',    bg: Colors.gray100     },
+  symptom: { color: Colors.danger, label: 'Symptom', bg: Colors.dangerSoft },
+  dose: { color: Colors.success, label: 'Medication', bg: Colors.successSoft },
+  report: { color: Colors.primary, label: 'Report', bg: Colors.primarySoft },
+  record: { color: Colors.teal, label: 'Visit', bg: Colors.tealSoft },
+  medicine: { color: Colors.warning, label: 'Medicine', bg: Colors.warningSoft },
+  system: { color: Colors.gray500, label: 'System', bg: Colors.gray100 },
 };
 
 const SEV_COLOR: Record<string, string> = {
   critical: Colors.danger,
-  warning:  Colors.warning,
-  success:  Colors.success,
-  info:     Colors.primary,
+  warning: Colors.warning,
+  success: Colors.success,
+  info: Colors.primary,
 };
 
 const TYPES = ['All', 'symptom', 'dose', 'report', 'record'];
@@ -67,7 +33,7 @@ export default function TimelineScreen() {
   const [typeFilter, setTypeFilter] = useState('All');
 
   const filtered = TIMELINE_DATA
-    .map(g => ({ ...g, events: g.events.filter(e => typeFilter === 'All' || e.type === typeFilter) }))
+    .map(g => ({ ...g, events: g.events.filter((e: any) => typeFilter === 'All' || e.type === typeFilter) }))
     .filter(g => g.events.length > 0);
 
   return (
@@ -117,7 +83,8 @@ export default function TimelineScreen() {
 
             {/* Events */}
             <View style={{ paddingLeft: 8 }}>
-              {group.events.map((event, ei) => {
+
+              {group.events.map((event: any, ei: number) => {
                 const meta = TYPE_META[event.type] || TYPE_META.system;
                 return (
                   <View key={event.id} style={{ flexDirection: 'row', gap: 12 }}>

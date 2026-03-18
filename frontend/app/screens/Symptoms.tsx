@@ -9,12 +9,8 @@ import DrawerLayout from '../../components/DrawerLayout';
 import Colors from '../../constants/colors';
 import { Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
 
-const mockResults = [
-  { condition: 'Dengue Fever', probability: 78, specialist: 'General Physician', icon: '🦟', severity: 'High', description: 'Viral infection transmitted by mosquitoes. Symptoms match high fever, headache and body aches pattern.' },
-  { condition: 'Viral Fever', probability: 65, specialist: 'General Physician', icon: '🌡️', severity: 'Medium', description: 'Common viral infection causing fever, fatigue and muscle pain. Usually resolves in 5-7 days.' },
-  { condition: 'Malaria', probability: 42, specialist: 'Infectious Disease', icon: '🧬', severity: 'Medium', description: 'Parasitic infection. Similar fever patterns but with cyclical episodes. Blood test recommended.' },
-  { condition: 'Typhoid', probability: 28, specialist: 'Gastroenterologist', icon: '🦠', severity: 'Medium', description: 'Bacterial infection causing sustained fever and abdominal symptoms.' },
-];
+// TODO: Replace with real results from API or context
+const mockResults: any[] = [];
 
 const doctors = [
   { name: 'Dr. Meera Kapoor', spec: 'General Physician', rating: 4.8, available: true },
