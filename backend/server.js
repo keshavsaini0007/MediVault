@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const mongoose = require("mongoose");
 dotenv.config();
 
 const validateEnv = require("./config/validateEnv");
@@ -31,6 +32,35 @@ app.set("view engine", "ejs");
 
 app.get("/", (req, res) => {
   res.send("MediVault server is running");
+});
+
+app.get("/health", (req, res) => {
+  return res.status(200).json({
+    status: "ok",
+    service: "medivault-backend",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/health/ready", (req, res) => {
+  const state = mongoose.connection.readyState;
+  const dbStateMap = {
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting",
+  };
+
+  const dbStatus = dbStateMap[state] || "unknown";
+  const isReady = state === 1;
+
+  return res.status(isReady ? 200 : 503).json({
+    status: isReady ? "ready" : "not_ready",
+    checks: {
+      database: dbStatus,
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use("/api/v1/auth", authRoutes);

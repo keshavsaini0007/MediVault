@@ -4,6 +4,8 @@ const {
 	getMyNotifications,
 	getUnreadCount,
 	markNotificationRead,
+	markAllNotificationsRead,
+	deleteNotification,
 } = require("../controllers/notificationController");
 const {
 	validateNotificationsQuery,
@@ -16,6 +18,8 @@ router.use(verifyToken);
 
 router.get("/", validateNotificationsQuery, getMyNotifications);
 router.get("/unread-count", getUnreadCount);
+router.patch("/read-all", markAllNotificationsRead);
 router.patch("/:id/read", validateNotificationIdParam, markNotificationRead);
+router.delete("/:id", validateNotificationIdParam, deleteNotification);
 
 module.exports = router;

@@ -212,10 +212,30 @@ const validateNotificationsQuery = [
     .optional({ values: "falsy" })
     .isBoolean()
     .withMessage("unreadOnly must be a boolean."),
+  query("isRead")
+    .optional({ values: "falsy" })
+    .isBoolean()
+    .withMessage("isRead must be a boolean."),
+  query("type")
+    .optional({ values: "falsy" })
+    .isIn(["dose_missed", "symptom_urgent", "system"])
+    .withMessage("type must be one of dose_missed, symptom_urgent, or system."),
+  query("from")
+    .optional({ values: "falsy" })
+    .isISO8601()
+    .withMessage("from must be a valid ISO 8601 datetime."),
+  query("to")
+    .optional({ values: "falsy" })
+    .isISO8601()
+    .withMessage("to must be a valid ISO 8601 datetime."),
   query("limit")
     .optional({ values: "falsy" })
     .isInt({ min: 1, max: 100 })
     .withMessage("limit must be an integer between 1 and 100."),
+  query("page")
+    .optional({ values: "falsy" })
+    .isInt({ min: 1, max: 10000 })
+    .withMessage("page must be an integer between 1 and 10000."),
   handleValidation,
 ];
 

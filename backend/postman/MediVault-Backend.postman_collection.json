@@ -35,6 +35,78 @@
       ]
     },
     {
+      "name": "01B Liveness Health (/health)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('/health returns 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('/health response shape is valid', function () {",
+              "  pm.expect(json.status).to.eql('ok');",
+              "  pm.expect(json).to.have.property('service');",
+              "  pm.expect(json).to.have.property('timestamp');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01C Readiness Health (/health/ready)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health/ready",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health",
+            "ready"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('/health/ready returns serviceable status code', function () {",
+              "  pm.expect([200, 503]).to.include(pm.response.code);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('/health/ready response shape is valid', function () {",
+              "  pm.expect(['ready','not_ready']).to.include(json.status);",
+              "  pm.expect(json).to.have.property('checks');",
+              "  pm.expect(json.checks).to.have.property('database');",
+              "  pm.expect(json).to.have.property('timestamp');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "02 Register Patient",
       "event": [
         {
@@ -218,6 +290,7 @@
               "  pm.expect(json.summary).to.have.property('activeMedicines');",
               "  pm.expect(json.summary).to.have.property('scheduledDosesToday');",
               "  pm.expect(json.summary).to.have.property('unreadNotifications');",
+              "  pm.expect(json.summary).to.have.property('unreadNotificationsByType');",
               "  pm.expect(json.summary).to.have.property('recentRecordsCount');",
               "  pm.expect(Array.isArray(json.recentSymptoms)).to.be.true;",
               "  pm.expect(Array.isArray(json.recentReports)).to.be.true;",
@@ -302,6 +375,7 @@
               "  pm.expect(json.summary).to.have.property('assignedPatients');",
               "  pm.expect(json.summary).to.have.property('highUrgencyPatients');",
               "  pm.expect(json.summary).to.have.property('missedDosesLast24h');",
+              "  pm.expect(json.summary).to.have.property('unreadNotificationsByType');",
               "  pm.expect(json.summary).to.have.property('recentRecordsCount');",
               "  pm.expect(Array.isArray(json.patients)).to.be.true;",
               "  pm.expect(Array.isArray(json.recentSymptoms)).to.be.true;",
@@ -853,6 +927,11 @@
             "exec": [
               "pm.test('Notifications unread count returns 200', function () {",
               "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('Unread count response includes unreadByType map', function () {",
+              "  pm.expect(json).to.have.property('unreadCount');",
+              "  pm.expect(json).to.have.property('unreadByType');",
               "});"
             ]
           }
@@ -899,6 +978,8 @@
               "const json = pm.response.json();",
               "pm.test('Notifications payload shape is valid', function () {",
               "  pm.expect(Array.isArray(json.notifications)).to.be.true;",
+              "  pm.expect(json).to.have.property('pagination');",
+              "  pm.expect(json.pagination).to.have.property('total');",
               "});",
               "if (json.notifications.length > 0) {",
               "  pm.environment.set('notificationId', json.notifications[0]._id);",
@@ -948,6 +1029,148 @@
               "    pm.response.to.have.status(200);",
               "  });",
               "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15D Mark All Notifications Read",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{patientToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notifications/read-all",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notifications",
+            "read-all"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Mark all notifications read returns 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('Read-all payload shape is valid', function () {",
+              "  pm.expect(json).to.have.property('matchedCount');",
+              "  pm.expect(json).to.have.property('modifiedCount');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15E List Unread Notifications (Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{patientToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notifications?isRead=false&limit=10&page=1",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notifications"
+          ],
+          "query": [
+            {
+              "key": "isRead",
+              "value": "false"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Filtered unread list returns 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('Filtered notifications include pagination', function () {",
+              "  pm.expect(Array.isArray(json.notifications)).to.be.true;",
+              "  pm.expect(json).to.have.property('pagination');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15F Delete Notification",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{patientToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notifications/{{notificationId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notifications",
+            "{{notificationId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const notificationId = pm.environment.get('notificationId');",
+              "if (!notificationId) {",
+              "  pm.test('Notification ID available for delete', function () {",
+              "    pm.expect.fail('Run List Notifications before delete.');",
+              "  });",
+              "} else {",
+              "  pm.test('Delete notification returns 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "  });",
+              "}",
+              "pm.environment.unset('notificationId');"
             ]
           }
         }

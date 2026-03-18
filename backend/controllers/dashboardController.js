@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const Medicine = require("../models/Medicine");
 const DoseLog = require("../models/DoseLog");
@@ -5,6 +6,22 @@ const Notification = require("../models/Notification");
 const SymptomLog = require("../models/SymptomLog");
 const Report = require("../models/Report");
 const MedRecord = require("../models/MedRecord");
+
+const buildUnreadByTypeMap = async (userId) => {
+  const normalizedUserId = typeof userId === "string"
+    ? new mongoose.Types.ObjectId(userId)
+    : userId;
+
+  const grouped = await Notification.aggregate([
+    { $match: { userId: normalizedUserId, isRead: false } },
+    { $group: { _id: "$type", count: { $sum: 1 } } },
+  ]);
+
+  return grouped.reduce((acc, row) => {
+    acc[row._id] = row.count;
+    return acc;
+  }, {});
+};
 
 const getDayBounds = () => {
   const now = new Date();
@@ -49,7 +66,7 @@ const getPatientDashboard = async (req, res, next) => {
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const [activeMedicines, todayDoseLogs, unreadNotifications, recentSymptoms, recentReports, recentRecordsCount] =
+    const [activeMedicines, todayDoseLogs, unreadNotifications, unreadNotificationsByType, recentSymptoms, recentReports, recentRecordsCount] =
       await Promise.all([
         Medicine.find({
           patientId,
@@ -68,6 +85,7 @@ const getPatientDashboard = async (req, res, next) => {
           scheduledTime: { $gte: dayStart, $lte: dayEnd },
         }).select("medicineId status scheduledTime loggedAt"),
         Notification.countDocuments({ userId: patientId, isRead: false }),
+        buildUnreadByTypeMap(patientId),
         SymptomLog.find({ patientId })
           .sort({ createdAt: -1 })
           .limit(5)
@@ -100,6 +118,7 @@ const getPatientDashboard = async (req, res, next) => {
         pendingToday,
         adherencePercent,
         unreadNotifications,
+        unreadNotificationsByType,
         recentRecordsCount,
       },
       recentSymptoms,
@@ -130,9 +149,10 @@ const getDoctorDashboard = async (req, res, next) => {
 
     const patientIds = assignedPatients.map((patient) => patient._id);
 
-    const [unreadNotifications, highUrgencyPatientIds, mediumUrgencyPatientIds, missedDosesLast24h, recentSymptoms, recentReports, recentRecordsCount] =
+    const [unreadNotifications, unreadNotificationsByType, highUrgencyPatientIds, mediumUrgencyPatientIds, missedDosesLast24h, recentSymptoms, recentReports, recentRecordsCount] =
       await Promise.all([
         Notification.countDocuments({ userId: doctorId, isRead: false }),
+        buildUnreadByTypeMap(doctorId),
         patientIds.length
           ? SymptomLog.distinct("patientId", {
               patientId: { $in: patientIds },
@@ -186,6 +206,7 @@ const getDoctorDashboard = async (req, res, next) => {
         mediumUrgencyPatients: mediumUrgencyPatientIds.length,
         missedDosesLast24h,
         unreadNotifications,
+        unreadNotificationsByType,
         recentRecordsCount,
       },
       patients: assignedPatients.slice(0, 8),
