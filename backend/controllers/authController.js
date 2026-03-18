@@ -2,12 +2,35 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
+const QR_EMERGENCY_TOKEN_EXPIRY = process.env.QR_EMERGENCY_TOKEN_EXPIRY || "30d";
+
 const signToken = (user) => {
 	return jwt.sign(
 		{ id: user._id.toString(), role: user.role, email: user.email },
 		process.env.JWT_SECRET,
 		{ expiresIn: "7d" }
 	);
+};
+
+const signEmergencyQrToken = (patientId) => {
+	return jwt.sign(
+		{
+			type: "patient_emergency_qr",
+			patientId: patientId.toString(),
+		},
+		process.env.JWT_SECRET,
+		{ expiresIn: QR_EMERGENCY_TOKEN_EXPIRY }
+	);
+};
+
+const getBaseUrlFromRequest = (req) => {
+	if (process.env.BACKEND_PUBLIC_URL) {
+		return process.env.BACKEND_PUBLIC_URL.replace(/\/$/, "");
+	}
+
+	const protocol = req.get("x-forwarded-proto") || req.protocol || "http";
+	const host = req.get("x-forwarded-host") || req.get("host") || "localhost:5000";
+	return `${protocol}://${host}`;
 };
 
 const sanitizeUser = (userDoc) => {
@@ -143,7 +166,19 @@ const register = async (req, res, next) => {
 		const user = await User.create(userPayload);
 
 		const token = signToken(user);
-		return res.status(201).json({ token, user: sanitizeUser(user) });
+		const response = { token, user: sanitizeUser(user) };
+
+		if (user.role === "patient") {
+			const emergencyQrToken = signEmergencyQrToken(user._id);
+			const baseUrl = getBaseUrlFromRequest(req);
+			response.emergencyQr = {
+				token: emergencyQrToken,
+				expiresIn: QR_EMERGENCY_TOKEN_EXPIRY,
+				url: `${baseUrl}/api/v1/qr/emergency/${emergencyQrToken}`,
+			};
+		}
+
+		return res.status(201).json(response);
 	} catch (error) {
 		return next(error);
 	}

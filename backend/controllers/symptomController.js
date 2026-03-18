@@ -1,4 +1,5 @@
 const SymptomLog = require("../models/SymptomLog");
+const Notification = require("../models/Notification");
 
 const analyzeSymptomsFallback = (symptomText) => {
 	const text = symptomText.toLowerCase();
@@ -134,6 +135,20 @@ const checkSymptoms = async (req, res, next) => {
 			symptoms: normalizedSymptoms,
 			...analysis,
 		});
+
+		if (analysis.urgency === "high") {
+			await Notification.create({
+				userId: req.user.id,
+				type: "symptom_urgent",
+				title: "Urgent Symptom Alert",
+				message: "Your latest symptom check indicates high urgency. Seek medical care promptly.",
+				metadata: {
+					symptomLogId: symptomLog._id,
+					urgency: analysis.urgency,
+					specialistType: analysis.specialistType,
+				},
+			});
+		}
 
 		return res.status(201).json({
 			message: "Symptom analysis completed.",

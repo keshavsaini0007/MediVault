@@ -86,6 +86,11 @@ const validateRegister = [
     .trim()
     .isLength({ min: 3, max: 40 })
     .withMessage("Hospital ID must be between 3 and 40 characters."),
+  body("hospitalId")
+    .if(body("role").equals("doctor"))
+    .trim()
+    .notEmpty()
+    .withMessage("hospitalId is required for doctor registration."),
   body("bloodType")
     .optional({ values: "falsy" })
     .isIn(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
@@ -110,17 +115,6 @@ const validateRegister = [
     .trim()
     .isLength({ min: 2, max: 80 })
     .withMessage("Spec must be between 2 and 80 characters."),
-  body()
-    .custom((_, { req }) => {
-      const role = req.body.role;
-      if (role === "doctor") {
-        const hasHospitalId = Boolean(req.body.hospitalId && String(req.body.hospitalId).trim());
-        if (!hasHospitalId) {
-          throw new Error("hospitalId is required for doctor registration.");
-        }
-      }
-      return true;
-    }),
   handleValidation,
 ];
 
