@@ -22,6 +22,7 @@ const medicineRoutes = require("./routes/medicine");
 const symptomRoutes = require("./routes/symptom");
 const notificationRoutes = require("./routes/notification");
 const qrRoutes = require("./routes/qr");
+const messageRoutes = require("./routes/message");
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use("/api/v1/medicine", medicineRoutes);
 app.use("/api/v1/symptom", symptomRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/qr", qrRoutes);
+app.use("/api/v1/messages", messageRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });

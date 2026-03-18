@@ -282,6 +282,54 @@ const validateQrAuditQuery = [
   handleValidation,
 ];
 
+const validateSendMessage = [
+  body().custom((_, { req }) => {
+    const recipientId = req.body.recipientId || req.body.patientId;
+    if (!recipientId) {
+      throw new Error("recipientId or patientId is required.");
+    }
+
+    if (!objectIdPattern.test(String(recipientId))) {
+      throw new Error("recipientId/patientId must be a valid ObjectId.");
+    }
+
+    return true;
+  }),
+  body().custom((_, { req }) => {
+    const content = req.body.body || req.body.content;
+    if (typeof content !== "string") {
+      throw new Error("body or content is required.");
+    }
+
+    const trimmed = content.trim();
+    if (trimmed.length < 1 || trimmed.length > 2000) {
+      throw new Error("body/content must be between 1 and 2000 characters.");
+    }
+
+    return true;
+  }),
+  handleValidation,
+];
+
+const validateConversationIdParam = [
+  param("conversationId")
+    .matches(objectIdPattern)
+    .withMessage("conversationId must be a valid ObjectId."),
+  handleValidation,
+];
+
+const validateConversationMessagesQuery = [
+  query("limit")
+    .optional({ values: "falsy" })
+    .isInt({ min: 1, max: 100 })
+    .withMessage("limit must be an integer between 1 and 100."),
+  query("page")
+    .optional({ values: "falsy" })
+    .isInt({ min: 1, max: 10000 })
+    .withMessage("page must be an integer between 1 and 10000."),
+  handleValidation,
+];
+
 module.exports = {
   validateDoctorPatientsQuery,
   validateDoctorPatientIdParam,
@@ -298,4 +346,7 @@ module.exports = {
   validateQrEmergencyTokenParam,
   validateQrScan,
   validateQrAuditQuery,
+  validateSendMessage,
+  validateConversationIdParam,
+  validateConversationMessagesQuery,
 };

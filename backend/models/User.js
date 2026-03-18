@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
         unique: true
     },
     mobile: {
-        type: String,
+        type: String,        
         trim: true,
         sparse: true,
         unique: true
