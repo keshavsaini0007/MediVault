@@ -7,9 +7,9 @@ const USER_KEY = '@MediVault:userData';
 const BASE_URL = (() => {
   if (__DEV__) {
     if (Platform.OS === 'android') {
-      return 'http://10.5.0.108:5000/api/v1';
+      return 'http://10.5.1.41:5000/api/v1';
     }
-    return 'http://localhost:5000/api/v1';
+    return 'http://10.5.1.41:5000/api/v1';
   }
   return "https://medivault-cxas.onrender.com/api/v1";
 })();
