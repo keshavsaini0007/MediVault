@@ -64,7 +64,15 @@ const validateRegister = [
     .bail()
     .withMessage("Password is required.")
     .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long."),
+    .withMessage("Password must be at least 8 characters long.")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain at least one uppercase letter.")
+    .matches(/[a-z]/)
+    .withMessage("Password must contain at least one lowercase letter.")
+    .matches(/[0-9]/)
+    .withMessage("Password must contain at least one number.")
+    .matches(/[!@#$%^&*(),.?":{}|<>]/)
+    .withMessage("Password must contain at least one special character."),
   body("role")
     .notEmpty()
     .bail()
@@ -87,10 +95,12 @@ const validateRegister = [
     .isLength({ min: 3, max: 40 })
     .withMessage("Hospital ID must be between 3 and 40 characters."),
   body("hospitalId")
-    .if(body("role").equals("doctor"))
-    .trim()
-    .notEmpty()
-    .withMessage("hospitalId is required for doctor registration."),
+    .custom((value, { req }) => {
+      if (req.body.role === "doctor" && (!value || String(value).trim() === "")) {
+        throw new Error("Hospital ID is required for doctor registration.");
+      }
+      return true;
+    }),
   body("bloodType")
     .optional({ values: "falsy" })
     .isIn(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])

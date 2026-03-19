@@ -11,6 +11,7 @@ const {
   uploadMyReport,
   deleteMyReport,
 } = require("../controllers/reportController");
+const { getMyMedicines } = require("../controllers/medicineController");
 const {
 	validateRecordIdParam,
 	validateReportIdParam,
@@ -24,12 +25,7 @@ router.use(verifyToken, requireRole("patient"));
 
 router.get("/dashboard", getPatientDashboard);
 
-router.get("/medicines", (req, res) => {
-	res.status(200).json({
-		message: "Patient medicine list endpoint is accessible.",
-		patientId: req.user.id,
-	});
-});
+router.get("/medicines", getMyMedicines);
 
 router.get("/records", getMyRecords);
 router.get("/records/:id", validateRecordIdParam, getRecordById);

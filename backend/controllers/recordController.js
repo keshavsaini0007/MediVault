@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const MedRecord = require("../models/MedRecord");
 const User = require("../models/User");
 
@@ -7,6 +8,10 @@ const createRecord = async (req, res, next) => {
   try {
     const { patientId, diagnosis, notes, medicines, fileUrls, aiSummary } =
       req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(patientId)) {
+      return res.status(400).json({ message: "Invalid patient ID format." });
+    }
 
     // Verify the patient exists
     const patient = await User.findById(patientId);
@@ -49,11 +54,31 @@ const createRecord = async (req, res, next) => {
 // Get all records for the logged in patient
 const getMyRecords = async (req, res, next) => {
   try {
-    const records = await MedRecord.find({ patientId: req.user.id }).sort({
-      date: -1,
-    });
+    const { limit = 20, page = 1 } = req.query;
+    const parsedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    const parsedPage = Math.max(Number(page) || 1, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
 
-    return res.status(200).json({ records });
+    const filter = { patientId: req.user.id };
+    const total = await MedRecord.countDocuments(filter);
+    const totalPages = Math.max(Math.ceil(total / parsedLimit), 1);
+
+    const records = await MedRecord.find(filter)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(parsedLimit);
+
+    return res.status(200).json({
+      records,
+      pagination: {
+        total,
+        page: parsedPage,
+        limit: parsedLimit,
+        totalPages,
+        hasNextPage: parsedPage < totalPages,
+        hasPrevPage: parsedPage > 1,
+      },
+    });
   } catch (error) {
     return next(error);
   }
@@ -62,6 +87,10 @@ const getMyRecords = async (req, res, next) => {
 // Get a single record by ID
 const getRecordById = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid record ID format." });
+    }
+
     const record = await MedRecord.findById(req.params.id);
 
     if (!record) {
@@ -97,6 +126,10 @@ const getRecordById = async (req, res, next) => {
 const getPatientRecords = async (req, res, next) => {
   try {
     const { patientId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(patientId)) {
+      return res.status(400).json({ message: "Invalid patient ID format." });
+    }
 
     // Verify patient exists
     const patient = await User.findById(patientId);

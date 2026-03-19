@@ -8,11 +8,31 @@ const {
 
 const getMyReports = async (req, res, next) => {
   try {
-    const reports = await Report.find({ patientId: req.user.id }).sort({
-      createdAt: -1,
-    });
+    const { limit = 20, page = 1 } = req.query;
+    const parsedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    const parsedPage = Math.max(Number(page) || 1, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
 
-    return res.status(200).json({ reports });
+    const filter = { patientId: req.user.id };
+    const total = await Report.countDocuments(filter);
+    const totalPages = Math.max(Math.ceil(total / parsedLimit), 1);
+
+    const reports = await Report.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parsedLimit);
+
+    return res.status(200).json({
+      reports,
+      pagination: {
+        total,
+        page: parsedPage,
+        limit: parsedLimit,
+        totalPages,
+        hasNextPage: parsedPage < totalPages,
+        hasPrevPage: parsedPage > 1,
+      },
+    });
   } catch (error) {
     return next(error);
   }

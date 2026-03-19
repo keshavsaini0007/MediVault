@@ -5,7 +5,7 @@ const Notification = require("../models/Notification");
 
 const parseScheduledTime = (value) => {
 	if (!value) {
-		return new Date();
+		return null;
 	}
 
 	const parsed = new Date(value);

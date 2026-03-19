@@ -1,4 +1,9 @@
+const mongoose = require("mongoose");
 const User = require("../models/User");
+
+const escapeRegex = (string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
 
 const sanitizePatient = (patientDoc) => ({
   id: patientDoc._id,
@@ -28,7 +33,8 @@ const getMyAssignedPatients = async (req, res, next) => {
 
     const keyword = String(q || "").trim();
     if (keyword) {
-      const regex = new RegExp(keyword, "i");
+      const escapedKeyword = escapeRegex(keyword);
+      const regex = new RegExp(escapedKeyword, "i");
       filter.$or = [
         { name: regex },
         { email: regex },
@@ -56,6 +62,10 @@ const getMyAssignedPatients = async (req, res, next) => {
 const assignPatientToDoctor = async (req, res, next) => {
   try {
     const { patientId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(patientId)) {
+      return res.status(400).json({ message: "Invalid patient ID format." });
+    }
 
     const patient = await User.findOne({ _id: patientId, role: "patient" });
     if (!patient) {
@@ -97,6 +107,10 @@ const assignPatientToDoctor = async (req, res, next) => {
 const unassignPatientFromDoctor = async (req, res, next) => {
   try {
     const { patientId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(patientId)) {
+      return res.status(400).json({ message: "Invalid patient ID format." });
+    }
 
     const patient = await User.findOne({ _id: patientId, role: "patient" });
     if (!patient) {
