@@ -63,6 +63,10 @@ export default function MedicinesScreen() {
         medicineAPI.getAdherenceSummary(),
       ]);
 
+      console.log('DEBUG frontend - medsRes:', medsRes.length);
+      console.log('DEBUG frontend - dueRes:', JSON.stringify(dueRes));
+      console.log('DEBUG frontend - weeklyRes:', JSON.stringify(weeklyRes));
+
       setMedicines(medsRes);
       setDueDoses(dueRes.dueDoses);
       setWeeklyTrend(weeklyRes.trend);
@@ -110,7 +114,7 @@ export default function MedicinesScreen() {
 
       setShowAdd(false);
       setNewMed({ name: '', dosage: '', frequency: 'daily', timeSlots: ['09:00'], instructions: '' });
-      fetchData();
+      await fetchData();
       Alert.alert('Success', 'Medicine added successfully');
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to add medicine');

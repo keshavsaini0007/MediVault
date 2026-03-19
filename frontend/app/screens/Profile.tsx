@@ -13,15 +13,16 @@ import { authAPI, User } from '../../services/api';
 type Tab = 'profile' | 'health' | 'notifications' | 'security' | 'alerts';
 
 /* ─── Shared editable field ─────────────────────────────────────── */
-function Field({ label, value, secure = false, colors }: {
-  label: string; value: string; secure?: boolean; colors: any;
+function Field({ label, value, onChange, secure = false, colors }: {
+  label: string; value: string; onChange?: (text: string) => void; secure?: boolean; colors: any;
 }) {
   return (
     <View style={{ marginBottom: 14 }}>
       <Text style={[ft.label, { color: colors.textMuted }]}>{label}</Text>
       <TextInput
         style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-        defaultValue={value}
+        value={value}
+        onChangeText={onChange}
         secureTextEntry={secure}
         placeholderTextColor={colors.textFaint}
       />
@@ -83,6 +84,10 @@ function DoctorProfile() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const accent = colors.primary;
 
   const loadUser = async () => {
@@ -105,6 +110,37 @@ function DoctorProfile() {
     await loadUser();
     setRefreshing(false);
   }, []);
+
+  const handleChangePassword = async () => {
+    if (!currentPassword) {
+      Alert.alert('Error', 'Current password is required');
+      return;
+    }
+    if (!newPassword) {
+      Alert.alert('Error', 'New password is required');
+      return;
+    }
+    if (newPassword.length < 8) {
+      Alert.alert('Error', 'New password must be at least 8 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    setSaving(true);
+    try {
+      await authAPI.changePassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      Alert.alert('Success', 'Password changed successfully');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -213,10 +249,10 @@ function DoctorProfile() {
             <Card>
               <CardHeader title="🔑 Change Password" />
               <View style={{ padding: 16 }}>
-                <Field label="Current Password" value="" secure colors={colors} />
-                <Field label="New Password" value="" secure colors={colors} />
-                <Field label="Confirm Password" value="" secure colors={colors} />
-                <Button label="Update Password" onPress={() => Alert.alert('Updated ✅')} />
+                <Field label="Current Password" value={currentPassword} onChange={setCurrentPassword} secure colors={colors} />
+                <Field label="New Password" value={newPassword} onChange={setNewPassword} secure colors={colors} />
+                <Field label="Confirm Password" value={confirmPassword} onChange={setConfirmPassword} secure colors={colors} />
+                <Button label={saving ? 'Updating...' : 'Update Password'} onPress={handleChangePassword} disabled={saving} />
               </View>
             </Card>
             <Card style={{ marginTop: 0 }}>
@@ -259,7 +295,28 @@ function PatientProfile() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Profile form state
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+
+  // Health form state
   const [bloodType, setBloodType] = useState('O+');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [conditions, setConditions] = useState('');
+  const [emergencyName, setEmergencyName] = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
+
+  // Security form state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const accent = colors.teal;
 
   const loadUser = async () => {
@@ -267,6 +324,16 @@ function PatientProfile() {
       const userData = await authAPI.me();
       setUser(userData);
       setBloodType(userData.bloodType || 'O+');
+      setFirstName(userData.firstName || '');
+      setLastName(userData.lastName || '');
+      setPhone(userData.phone || userData.mobile || '');
+      setAddress(userData.address || '');
+      setAllergies(userData.allergies?.join(', ') || '');
+      setConditions(userData.conditions?.join(', ') || '');
+      setHeight(userData.height?.toString() || '');
+      setWeight(userData.weight?.toString() || '');
+      setEmergencyName(userData.emergencyContact?.name || '');
+      setEmergencyPhone(userData.emergencyContact?.phone || '');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to load user');
     } finally {
@@ -283,6 +350,88 @@ function PatientProfile() {
     await loadUser();
     setRefreshing(false);
   }, []);
+
+  const handleSaveProfile = async () => {
+    if (!firstName.trim()) {
+      Alert.alert('Error', 'First name is required');
+      return;
+    }
+    if (!lastName.trim()) {
+      Alert.alert('Error', 'Last name is required');
+      return;
+    }
+    setSaving(true);
+    try {
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      const updatedUser = await authAPI.updateProfile({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        name: fullName,
+        phone: phone.trim(),
+        address: address.trim(),
+      });
+      setUser(updatedUser);
+      Alert.alert('Success', 'Profile updated successfully');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveHealth = async () => {
+    setSaving(true);
+    try {
+      const updatedUser = await authAPI.updateHealthInfo({
+        bloodType,
+        allergies: allergies.split(',').map(a => a.trim()).filter(Boolean),
+        height: height ? parseFloat(height) : undefined,
+        weight: weight ? parseFloat(weight) : undefined,
+        conditions: conditions.split(',').map(c => c.trim()).filter(Boolean),
+        emergencyContact: {
+          name: emergencyName.trim(),
+          phone: emergencyPhone.trim(),
+        },
+      });
+      setUser(updatedUser);
+      Alert.alert('Success', 'Health info updated successfully');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update health info');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword) {
+      Alert.alert('Error', 'Current password is required');
+      return;
+    }
+    if (!newPassword) {
+      Alert.alert('Error', 'New password is required');
+      return;
+    }
+    if (newPassword.length < 8) {
+      Alert.alert('Error', 'New password must be at least 8 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    setSaving(true);
+    try {
+      await authAPI.changePassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      Alert.alert('Success', 'Password changed successfully');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -365,17 +514,17 @@ function PatientProfile() {
               <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={[ft.label, { color: colors.textMuted }]}>First Name</Text>
-                  <TextInput style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]} defaultValue={user?.firstName || ''} />
+                  <TextInput style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]} value={firstName} onChangeText={setFirstName} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[ft.label, { color: colors.textMuted }]}>Last Name</Text>
-                  <TextInput style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]} defaultValue={user?.lastName || ''} />
+                  <TextInput style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]} value={lastName} onChangeText={setLastName} />
                 </View>
               </View>
               <Field label="Email" value={user?.email || ''} colors={colors} />
-              <Field label="Phone" value={user?.phone || user?.mobile || ''} colors={colors} />
-              <Field label="Address" value="" colors={colors} />
-              <Button label="Save Changes" onPress={() => Alert.alert('Saved ✅')} />
+              <Field label="Phone" value={phone} onChange={setPhone} colors={colors} />
+              <Field label="Address" value={address} onChange={setAddress} colors={colors} />
+              <Button label={saving ? 'Saving...' : 'Save Changes'} onPress={handleSaveProfile} disabled={saving} />
             </View>
           </Card>
         )}
@@ -393,12 +542,24 @@ function PatientProfile() {
                   </TouchableOpacity>
                 ))}
               </View>
-              <Field label="Height (cm)" value="" colors={colors} />
-              <Field label="Weight (kg)" value="" colors={colors} />
-              <Field label="Allergies" value={user?.allergies?.join(', ') || ''} colors={colors} />
-              <Field label="Conditions" value="" colors={colors} />
-              <Field label="Emergency Contact" value={user?.emergencyContact?.name ? `${user.emergencyContact.name} — ${user.emergencyContact.phone || ''}` : ''} colors={colors} />
-              <Button label="Save Health Info" onPress={() => Alert.alert('Saved ✅')} />
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[ft.label, { color: colors.textMuted }]}>Height (cm)</Text>
+                  <TextInput style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]} value={height} onChangeText={setHeight} keyboardType="numeric" placeholder="e.g. 170" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[ft.label, { color: colors.textMuted }]}>Weight (kg)</Text>
+                  <TextInput style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]} value={weight} onChangeText={setWeight} keyboardType="numeric" placeholder="e.g. 65" />
+                </View>
+              </View>
+              <Field label="Allergies" value={allergies} onChange={setAllergies} colors={colors} />
+              <Field label="Conditions" value={conditions} onChange={setConditions} colors={colors} />
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[ft.label, { color: colors.textMuted }]}>Emergency Contact</Text>
+                <TextInput style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary, marginBottom: 8 }]} value={emergencyName} onChangeText={setEmergencyName} placeholder="Contact name" placeholderTextColor={colors.textFaint} />
+                <TextInput style={[ft.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]} value={emergencyPhone} onChangeText={setEmergencyPhone} placeholder="Contact phone" keyboardType="phone-pad" placeholderTextColor={colors.textFaint} />
+              </View>
+              <Button label={saving ? 'Saving...' : 'Save Health Info'} onPress={handleSaveHealth} disabled={saving} />
             </View>
           </Card>
         )}
@@ -428,10 +589,10 @@ function PatientProfile() {
             <Card>
               <CardHeader title="🔑 Change Password" />
               <View style={{ padding: 16 }}>
-                <Field label="Current Password" value="" secure colors={colors} />
-                <Field label="New Password" value="" secure colors={colors} />
-                <Field label="Confirm Password" value="" secure colors={colors} />
-                <Button label="Update Password" onPress={() => Alert.alert('Updated ✅')} />
+                <Field label="Current Password" value={currentPassword} onChange={setCurrentPassword} secure colors={colors} />
+                <Field label="New Password" value={newPassword} onChange={setNewPassword} secure colors={colors} />
+                <Field label="Confirm Password" value={confirmPassword} onChange={setConfirmPassword} secure colors={colors} />
+                <Button label={saving ? 'Updating...' : 'Update Password'} onPress={handleChangePassword} disabled={saving} />
               </View>
             </Card>
             <Card style={{ marginTop: 0 }}>

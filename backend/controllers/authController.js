@@ -320,8 +320,127 @@ const me = async (req, res, next) => {
 	}
 };
 
+const updateProfile = async (req, res, next) => {
+	try {
+		const {
+			firstName,
+			lastName,
+			name,
+			phone,
+			mobile,
+			address,
+		} = req.body;
+
+		const user = await User.findById(req.user.id);
+		if (!user) {
+			return res.status(404).json({ message: "User not found." });
+		}
+
+		if (firstName !== undefined) user.firstName = firstName;
+		if (lastName !== undefined) user.lastName = lastName;
+		if (name !== undefined) user.name = name;
+		if (phone !== undefined) user.phone = phone;
+		if (mobile !== undefined) user.mobile = mobile;
+		if (address !== undefined) user.address = address;
+
+		await user.save();
+
+		return res.status(200).json({
+			message: "Profile updated successfully.",
+			user: sanitizeUser(user),
+		});
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const updateHealthInfo = async (req, res, next) => {
+	try {
+		const {
+			bloodType,
+			allergies,
+			height,
+			weight,
+			conditions,
+			emergencyContact,
+		} = req.body;
+
+		const user = await User.findById(req.user.id);
+		if (!user) {
+			return res.status(404).json({ message: "User not found." });
+		}
+
+		if (bloodType !== undefined) user.bloodType = bloodType;
+		if (allergies !== undefined) {
+			user.allergies = Array.isArray(allergies)
+				? allergies
+				: typeof allergies === "string"
+					? allergies.split(",").map(a => a.trim()).filter(Boolean)
+					: [];
+		}
+		if (height !== undefined) user.height = height;
+		if (weight !== undefined) user.weight = weight;
+		if (conditions !== undefined) {
+			user.conditions = Array.isArray(conditions)
+				? conditions
+				: typeof conditions === "string"
+					? conditions.split(",").map(c => c.trim()).filter(Boolean)
+					: [];
+		}
+		if (emergencyContact !== undefined) {
+			user.emergencyContact = {
+				name: emergencyContact.name || user.emergencyContact?.name,
+				phone: emergencyContact.phone || user.emergencyContact?.phone,
+			};
+		}
+
+		await user.save();
+
+		return res.status(200).json({
+			message: "Health info updated successfully.",
+			user: sanitizeUser(user),
+		});
+	} catch (error) {
+		return next(error);
+	}
+};
+
+const changePassword = async (req, res, next) => {
+	try {
+		const { currentPassword, newPassword } = req.body;
+
+		if (!currentPassword || !newPassword) {
+			return res.status(400).json({ message: "Current password and new password are required." });
+		}
+
+		if (newPassword.length < 8) {
+			return res.status(400).json({ message: "New password must be at least 8 characters." });
+		}
+
+		const user = await User.findById(req.user.id);
+		if (!user) {
+			return res.status(404).json({ message: "User not found." });
+		}
+
+		const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+		if (!isMatch) {
+			return res.status(401).json({ message: "Current password is incorrect." });
+		}
+
+		user.passwordHash = await bcrypt.hash(newPassword, 10);
+		await user.save();
+
+		return res.status(200).json({ message: "Password changed successfully." });
+	} catch (error) {
+		return next(error);
+	}
+};
+
 module.exports = {
 	register,
 	login,
 	me,
+	updateProfile,
+	updateHealthInfo,
+	changePassword,
 };

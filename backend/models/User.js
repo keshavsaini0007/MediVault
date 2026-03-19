@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    address: {
+        type: String,
+        trim: true
+    },
 
     //Patient specific fields
     bloodType: {
@@ -62,6 +66,15 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    height: {
+        type: Number,
+        trim: true
+    },
+    weight: {
+        type: Number,
+        trim: true
+    },
+    conditions: [String],
 
     //Doctor specific fields
     specialization: {

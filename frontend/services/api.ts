@@ -25,6 +25,7 @@ export interface User {
   username?: string;
   mobile?: string;
   phone?: string;
+  address?: string;
   role: 'patient' | 'doctor';
   bloodType?: string;
   allergies?: string[];
@@ -36,6 +37,9 @@ export interface User {
   specialization?: string;
   hospitalAffiliation?: string;
   hospitalId?: string;
+  height?: number;
+  weight?: number;
+  conditions?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -299,6 +303,56 @@ export const authAPI = {
       throw new Error((response.data.message as string) || 'Failed to get user');
     }
     return (response.data.user as User);
+  },
+
+  updateProfile: async (data: {
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    phone?: string;
+    mobile?: string;
+    address?: string;
+  }): Promise<User> => {
+    const response = await apiCall('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error((response.data.message as string) || 'Failed to update profile');
+    }
+    const updatedUser = response.data.user as User;
+    await setUserData(updatedUser);
+    return updatedUser;
+  },
+
+  updateHealthInfo: async (data: {
+    bloodType?: string;
+    allergies?: string[];
+    height?: number;
+    weight?: number;
+    conditions?: string[];
+    emergencyContact?: { name?: string; phone?: string };
+  }): Promise<User> => {
+    const response = await apiCall('/auth/health', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error((response.data.message as string) || 'Failed to update health info');
+    }
+    const updatedUser = response.data.user as User;
+    await setUserData(updatedUser);
+    return updatedUser;
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    const response = await apiCall('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    if (!response.ok) {
+      throw new Error((response.data.message as string) || 'Failed to change password');
+    }
   },
 
   logout: async (): Promise<void> => {

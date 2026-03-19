@@ -103,6 +103,8 @@ const addMedicine = async (req, res, next) => {
 				.json({ message: "name and dosage are required fields." });
 		}
 
+		console.log('DEBUG addMedicine - user.id:', req.user.id);
+
 		const medicine = await Medicine.create({
 			patientId: req.user.id,
 			name,
@@ -113,6 +115,8 @@ const addMedicine = async (req, res, next) => {
 			endDate,
 			instructions,
 		});
+
+		console.log('DEBUG addMedicine - created:', medicine._id, 'patientId:', medicine.patientId);
 
 		return res.status(201).json({
 			message: "Medicine added successfully.",
@@ -227,12 +231,18 @@ const getDueDoses = async (req, res, next) => {
 		const dayEnd = new Date(now);
 		dayEnd.setHours(23, 59, 59, 999);
 
+		console.log('DEBUG getDueDoses - user.id:', req.user.id);
+		console.log('DEBUG getDueDoses - dayStart:', dayStart);
+		console.log('DEBUG getDueDoses - dayEnd:', dayEnd);
+
 		const medicines = await Medicine.find({
 			patientId: req.user.id,
 			isActive: true,
 			startDate: { $lte: dayEnd },
 			$or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: dayStart } }],
 		}).sort({ createdAt: -1 });
+
+		console.log('DEBUG getDueDoses - found medicines:', medicines.length);
 
 		const medicineIds = medicines.map((m) => m._id);
 		const todayLogs = await DoseLog.find({
