@@ -4,41 +4,42 @@ import {
   SafeAreaView, Animated,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useBadges } from '../context/BadgeContext';
 import { allPatients } from '../data/mockData';
 
 interface NavSection { section: string }
-interface NavLink { label: string; href: string; icon: string; badgeKey?: 'notif' | 'msg' | 'alert' | number }
+interface NavLink { label: string; href: string; icon: keyof typeof Ionicons.glyphMap; badgeKey?: 'notif' | 'msg' | 'alert' | number }
 type NavEntry = NavSection | NavLink;
 
 const doctorNav: NavEntry[] = [
   { section: 'Main' },
-  { label: 'Dashboard',     href: '/screens/DoctorDashboard',  icon: '🏠'                               },
-  { label: 'Patients',      href: '/screens/Patients',          icon: '👥', badgeKey: allPatients.length },
-  { label: 'Alerts',        href: '/screens/Alerts',            icon: '🚨', badgeKey: 'alert'            },
-  { label: 'Messages',      href: '/screens/Messages',          icon: '💬', badgeKey: 'msg'              },
+  { label: 'Dashboard',     href: '/screens/DoctorDashboard',  icon: 'home-outline'                               },
+  { label: 'Patients',      href: '/screens/Patients',          icon: 'people-outline', badgeKey: allPatients.length },
+  { label: 'Alerts',        href: '/screens/Alerts',            icon: 'alert-circle-outline', badgeKey: 'alert'            },
+  { label: 'Messages',      href: '/screens/Messages',          icon: 'chatbubbles-outline', badgeKey: 'msg'              },
   { section: 'Activity' },
-  { label: 'Notifications', href: '/screens/Notifications',     icon: '🔔', badgeKey: 'notif'            },
+  { label: 'Notifications', href: '/screens/Notifications',     icon: 'notifications-outline', badgeKey: 'notif'            },
   { section: 'Account' },
-  { label: 'Profile',       href: '/screens/Profile',           icon: '⚙️'                               },
-  { label: 'Logout',        href: '/screens/SplashScreen',      icon: '🚪'                               },
+  { label: 'Profile',       href: '/screens/Profile',           icon: 'person-outline'                               },
+  { label: 'Logout',        href: '/screens/SplashScreen',      icon: 'log-out-outline'                               },
 ];
 
 const patientNav: NavEntry[] = [
   { section: 'My Health' },
-  { label: 'Dashboard',     href: '/screens/PatientDashboard',  icon: '🏠'                    },
-  { label: 'Medicines',     href: '/screens/Medicines',         icon: '💊'                    },
-  { label: 'My Records',    href: '/screens/Records',           icon: '📁'                    },
-  { label: 'Reports',       href: '/screens/Reports',           icon: '📋'                    },
+  { label: 'Dashboard',     href: '/screens/PatientDashboard',  icon: 'home-outline'                    },
+  { label: 'Medicines',     href: '/screens/Medicines',         icon: 'medical-outline'                    },
+  { label: 'My Records',    href: '/screens/Records',           icon: 'folder-outline'                    },
+  { label: 'Reports',       href: '/screens/Reports',           icon: 'document-text-outline'                    },
   { section: 'Tools' },
-  { label: 'Symptom Check', href: '/screens/Symptoms',          icon: '🩺'                    },
-  { label: 'Timeline',      href: '/screens/Timeline',          icon: '📅'                    },
-  { label: 'QR Profile',    href: '/screens/QRProfile',         icon: '🔲'                    },
+  { label: 'Symptom Check', href: '/screens/Symptoms',          icon: 'fitness-outline'                    },
+  { label: 'Timeline',      href: '/screens/Timeline',          icon: 'time-outline'                    },
+  { label: 'QR Profile',    href: '/screens/QRProfile',         icon: 'qr-code-outline'                    },
   { section: 'Account' },
-  { label: 'Notifications', href: '/screens/Notifications',     icon: '🔔', badgeKey: 'notif' },
-  { label: 'Profile',       href: '/screens/Profile',           icon: '⚙️'                    },
-  { label: 'Logout',        href: '/screens/SplashScreen',      icon: '🚪'                    },
+  { label: 'Notifications', href: '/screens/Notifications',     icon: 'notifications-outline', badgeKey: 'notif' },
+  { label: 'Profile',       href: '/screens/Profile',           icon: 'person-outline'                    },
+  { label: 'Logout',        href: '/screens/SplashScreen',      icon: 'log-out-outline'                    },
 ];
 
 function isSection(e: NavEntry): e is NavSection { return 'section' in e; }
@@ -56,7 +57,7 @@ function NavItem({ item, active, badgeCount, accent, onPress }: {
         onPress={onPress}
         activeOpacity={1}
         style={[s.navItem, active && { backgroundColor: 'rgba(255,255,255,0.13)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]}>
-        <Text style={[s.navIcon, { opacity: active ? 1 : 0.7 }]}>{item.icon}</Text>
+        <Ionicons name={item.icon} size={18} color={active ? 'white' : 'rgba(255,255,255,0.65)'} style={s.navIcon} />
         <Text style={[s.navLabel, active && s.navLabelActive]}>{item.label}</Text>
         {badgeCount > 0 && (
           <View style={s.badge}>
@@ -104,7 +105,7 @@ export default function Sidebar({ role = 'patient', userName = 'User', userIniti
         <TouchableOpacity style={[s.logoArea, { borderBottomColor: 'rgba(255,255,255,0.1)' }]}
           onPress={() => { router.push(home as any); onClose?.(); }} activeOpacity={0.8}>
           <View style={[s.logoIcon, { backgroundColor: accent }]}>
-            <Text style={{ color: 'white', fontSize: 18, fontWeight: '900' }}>✚</Text>
+            <Ionicons name="medical" size={20} color="white" />
           </View>
           <View>
             <Text style={s.logoText}>MediVault</Text>
@@ -138,7 +139,7 @@ export default function Sidebar({ role = 'patient', userName = 'User', userIniti
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.userName} numberOfLines={1}>{userName}</Text>
-              <Text style={s.userRole}>{role === 'doctor' ? '👨‍⚕️ Physician' : '🧑 Patient'}</Text>
+              <Text style={s.userRole}>{role === 'doctor' ? 'Physician' : 'Patient'}</Text>
             </View>
             <View style={[s.roleTag, { backgroundColor: role === 'doctor' ? '#2E6AE620' : '#0D948820' }]}>
               <Text style={[s.roleTagText, { color: role === 'doctor' ? '#60A5FA' : '#34D399' }]}>
@@ -161,7 +162,7 @@ const s = StyleSheet.create({
   nav: { flex: 1, paddingHorizontal: 10, paddingTop: 14 },
   sectionLabel: { fontSize: 9, fontWeight: '800', color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, textTransform: 'uppercase', paddingHorizontal: 10, paddingTop: 14, paddingBottom: 6 },
   navItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginBottom: 2, position: 'relative', overflow: 'hidden' },
-  navIcon: { fontSize: 16, width: 22, textAlign: 'center' },
+  navIcon: { width: 22, textAlign: 'center' },
   navLabel: { flex: 1, fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.65)' },
   navLabelActive: { color: 'white', fontWeight: '700' },
   activeBar: { position: 'absolute', right: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },

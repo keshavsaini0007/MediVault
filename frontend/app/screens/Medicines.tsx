@@ -3,10 +3,10 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Modal, TextInput, Alert, RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import DrawerLayout from '../../components/DrawerLayout';
-import Colors from '../../constants/colors';
-import { StatCard, Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
+import BottomNavLayout from '../../components/BottomNavLayout';
+import { StatCard, Card, CardHeader, Badge, Button, ProgressBar, IconBox } from '../../components/UI';
 import { medicineAPI, Medicine } from '../../services/api';
 
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -168,16 +168,16 @@ export default function MedicinesScreen() {
   };
 
   return (
-    <DrawerLayout
-      title="Medicine Tracker"
-      subtitle="Track your medications and adherence"
-      showBack
+    <BottomNavLayout
+      title="Medicines"
+      subtitle="Track your medications"
+      role="patient"
       headerRight={<Button label="+ Add" onPress={() => setShowAdd(true)} size="sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />}
     >
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
         {loading ? (
           <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 40 }}>Loading...</Text>
@@ -189,53 +189,73 @@ export default function MedicinesScreen() {
         ) : (
           <>
             {/* Stats */}
-            <View style={styles.statsGrid}>
-              <View style={styles.statHalf}><StatCard icon="💊" value={String(stats.active)} label="Active Medicines" /></View>
-              <View style={styles.statHalf}><StatCard icon="✅" value={`${stats.taken}`} label="Taken Today" iconBg={Colors.successSoft} valueColor={Colors.success} /></View>
-              <View style={styles.statHalf}><StatCard icon="⏰" value={`${stats.pending}`} label="Pending" iconBg={Colors.warningSoft} valueColor={Colors.warning} /></View>
-              <View style={styles.statHalf}><StatCard icon="📊" value={`${stats.avgAdherence}%`} label="Avg Adherence" iconBg={Colors.primarySoft} valueColor={Colors.primary} /></View>
+            <View style={md.statsGrid}>
+              <View style={md.statHalf}><StatCard icon="medical-outline" value={String(stats.active)} label="Active Medicines" /></View>
+              <View style={md.statHalf}><StatCard icon="checkmark-circle-outline" value={`${stats.taken}`} label="Taken Today" iconBg={colors.successSoft} valueColor={colors.success} iconColor={colors.success} /></View>
+              <View style={md.statHalf}><StatCard icon="time-outline" value={`${stats.pending}`} label="Pending" iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} /></View>
+              <View style={md.statHalf}><StatCard icon="stats-chart-outline" value={`${stats.avgAdherence}%`} label="Avg Adherence" iconBg={colors.primarySoft} valueColor={colors.primary} iconColor={colors.primary} /></View>
             </View>
 
             {/* Today's Schedule */}
-            <Card>
-              <CardHeader title="📅 Today's Schedule" />
+            <Card variant="elevated" glowColor={colors.teal}>
+              <CardHeader title="Today's Schedule" icon="time-outline" />
               <View style={{ padding: 16 }}>
                 {dueDoses.length === 0 ? (
-                  <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>
-                    No medications scheduled for today
-                  </Text>
+                  <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                    <IconBox icon="medical-outline" color={colors.textFaint} bg={colors.tealSoft} size={56} />
+                    <Text style={{ color: colors.textMuted, marginTop: 12 }}>No medications scheduled</Text>
+                  </View>
                 ) : (
-                  dueDoses.map((dose, i) => (
-                    <View key={`${dose.medicineId}-${dose.slot}-${i}`} style={[styles.doseRow, i < dueDoses.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
-                      <Text style={styles.doseTime}>{dose.slot}</Text>
-                      <View style={[styles.doseDot, { backgroundColor: dose.status === 'taken' ? Colors.success : dose.isOverdue ? Colors.danger : Colors.primary }]} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.doseName}>{dose.medicineName}</Text>
-                        <Text style={styles.doseDosage}>{dose.dosage}</Text>
-                      </View>
-                      {dose.status === 'taken' ? (
-                        <Badge label="Taken" type="success" />
-                      ) : dose.status === 'missed' ? (
-                        <Button label="Retake" onPress={() => handleMarkTaken(dose)} size="sm" />
-                      ) : (
-                        <Button label="Take Now" onPress={() => handleMarkTaken(dose)} size="sm" />
-                      )}
-                    </View>
-                  ))
+                  dueDoses.map((dose, i) => {
+                    const dotColor = dose.status === 'taken' ? colors.success : dose.isOverdue ? colors.danger : colors.teal;
+                    return (
+                      <TouchableOpacity 
+                        key={`${dose.medicineId}-${dose.slot}-${i}`} 
+                        style={[md.doseRow, i < dueDoses.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}
+                        activeOpacity={0.7}
+                      >
+                        <View style={[md.doseDot, { backgroundColor: dotColor, shadowColor: dotColor, shadowOpacity: 0.35 }]}>
+                          <Ionicons name={dose.status === 'taken' ? 'checkmark' : dose.isOverdue ? 'alert-circle' : 'time-outline'} size={14} color="white" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[md.doseName, { color: colors.textPrimary }]}>{dose.medicineName}</Text>
+                          <Text style={[md.doseDosage, { color: colors.textMuted }]}>{dose.slot} · {dose.dosage}</Text>
+                        </View>
+                        {dose.status === 'taken' ? (
+                          <Badge label="Taken" type="success" icon="checkmark-circle" />
+                        ) : (
+                          <Button 
+                            label={dose.status === 'missed' ? 'Retake' : 'Take'} 
+                            onPress={() => handleMarkTaken(dose)} 
+                            size="sm" 
+                            icon={dose.status === 'missed' ? 'refresh' : 'checkmark'}
+                            pill
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })
                 )}
               </View>
             </Card>
 
             {/* Weekly Adherence */}
-            <Card>
-              <CardHeader title="📊 Weekly Adherence" right={<Badge label={`${stats.avgAdherence}% avg`} type={stats.avgAdherence >= 80 ? 'success' : 'warning'} />} />
+            <Card variant="elevated" glowColor={colors.teal}>
+              <CardHeader 
+                title="Weekly Adherence" 
+                icon="analytics-outline"
+                right={<Badge label={`${stats.avgAdherence}% avg`} type={stats.avgAdherence >= 80 ? 'success' : 'warning'} />} 
+              />
               <View style={{ padding: 16 }}>
-                <View style={styles.weeklyBars}>
+                <View style={md.weeklyBars}>
                   {weeklyTrend.map((day, i) => (
-                    <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-                      <View style={[styles.bar, {
-                        height: Math.max(4, day.adherencePercent * 0.5),
-                        backgroundColor: i === weeklyTrend.length - 1 ? Colors.primary : Colors.primarySoft,
+                    <View key={i} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                      <View style={[md.bar, {
+                        height: Math.max(6, day.adherencePercent * 0.5),
+                        backgroundColor: i === weeklyTrend.length - 1 ? colors.teal : colors.tealSoft,
+                        shadowColor: i === weeklyTrend.length - 1 ? colors.teal : 'transparent',
+                        shadowOpacity: i === weeklyTrend.length - 1 ? 0.4 : 0,
+                        shadowRadius: 4,
                         borderTopLeftRadius: 4, borderTopRightRadius: 4,
                       }]} />
                       <Text style={{ fontSize: 10, color: colors.textFaint }}>{getDayName(day.date)}</Text>
@@ -246,37 +266,39 @@ export default function MedicinesScreen() {
             </Card>
 
             {/* Medicines List */}
-            <Card>
-              <CardHeader title="💊 My Medicines" />
+            <Card variant="elevated" glowColor={colors.teal}>
+              <CardHeader title="My Medicines" icon="medical-outline" />
               <View style={{ padding: 16 }}>
                 {medicines.length === 0 ? (
                   <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                    <Text style={{ fontSize: 40, marginBottom: 8 }}>💊</Text>
-                    <Text style={{ color: colors.textMuted }}>No medicines added yet</Text>
+                    <IconBox icon="medical-outline" color={colors.textFaint} bg={colors.tealSoft} size={56} />
+                    <Text style={{ color: colors.textMuted, marginTop: 12 }}>No medicines added yet</Text>
                     <Button label="Add Medicine" onPress={() => setShowAdd(true)} size="sm" style={{ marginTop: 12 }} />
                   </View>
                 ) : (
                   medicines.map((med, i) => {
                     const medAdherence = getAdherenceForMedicine(med._id);
+                    const barColor = medAdherence >= 80 ? colors.success : colors.warning;
                     return (
-                      <View key={med._id} style={[styles.medCard, i < medicines.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft, paddingBottom: 12, marginBottom: 12 }]}>
-                        <View style={{ flex: 1 }}>
+                      <View key={med._id} style={[md.medCard, i < medicines.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft, paddingBottom: 14, marginBottom: 14 }]}>
+                        <IconBox icon="medical" color={colors.teal} bg={colors.tealSoft} size={42} />
+                        <View style={{ flex: 1, marginLeft: 14 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                            <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textPrimary }}>{med.name}</Text>
-                            <Badge label={med.dosage} />
+                            <Text style={{ fontWeight: '700', fontSize: 15, color: colors.textPrimary }}>{med.name}</Text>
+                            <Badge label={med.dosage} size="sm" />
                           </View>
                           <Text style={{ fontSize: 12, color: colors.textMuted }}>
                             {med.frequency} · {med.timeSlots?.join(', ') || 'No schedule'}
                           </Text>
                           {med.startDate && (
-                            <Text style={{ fontSize: 11, color: colors.textFaint, marginTop: 2 }}>
+                            <Text style={{ fontSize: 11, color: colors.textFaint, marginTop: 3 }}>
                               Started: {formatDate(med.startDate)}
-                              {med.endDate ? ` → ${formatDate(med.endDate)}` : ''}
+                              {med.endDate ? ` - ${formatDate(med.endDate)}` : ''}
                             </Text>
                           )}
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                            <ProgressBar value={medAdherence} color={medAdherence >= 80 ? Colors.success : Colors.warning} style={{ flex: 1, height: 6 }} />
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: medAdherence >= 80 ? Colors.success : Colors.warning }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                            <ProgressBar value={medAdherence} color={barColor} style={{ flex: 1, height: 8 }} />
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: barColor, minWidth: 40 }}>
                               {medAdherence}%
                             </Text>
                           </View>
@@ -293,51 +315,55 @@ export default function MedicinesScreen() {
 
       {/* Add Medicine Modal */}
       <Modal visible={showAdd} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>💊 Add New Medicine</Text>
-              <TouchableOpacity onPress={() => setShowAdd(false)}>
-                <Text style={{ fontSize: 18, color: colors.textMuted }}>✕</Text>
+        <View style={md.modalOverlay}>
+          <View style={[md.modalCard, { backgroundColor: colors.bgCard, shadowColor: colors.teal, shadowOpacity: 0.15, borderColor: colors.tealSoft }]}>
+            <View style={[md.modalHeader, { borderBottomColor: colors.borderSoft }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <IconBox icon="medical" color={colors.teal} bg={colors.tealSoft} size={36} />
+                <Text style={[md.modalTitle, { color: colors.textPrimary }]}>Add New Medicine</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowAdd(false)} activeOpacity={0.7} style={md.closeBtn}>
+                <Ionicons name="close-circle" size={26} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={{ maxHeight: 400 }}>
-              <View style={{ padding: 16 }}>
-                <Text style={styles.label}>Medicine Name *</Text>
+            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+              <View style={{ padding: 20 }}>
+                <Text style={[md.label, { color: colors.textMuted }]}>Medicine Name *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[md.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="e.g. Paracetamol"
                   value={newMed.name}
                   onChangeText={(text) => setNewMed(prev => ({ ...prev, name: text }))}
                   placeholderTextColor={colors.textFaint}
                 />
 
-                <Text style={styles.label}>Dosage *</Text>
+                <Text style={[md.label, { color: colors.textMuted }]}>Dosage *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[md.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="e.g. 500mg"
                   value={newMed.dosage}
                   onChangeText={(text) => setNewMed(prev => ({ ...prev, dosage: text }))}
                   placeholderTextColor={colors.textFaint}
                 />
 
-                <Text style={styles.label}>Frequency</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                <Text style={[md.label, { color: colors.textMuted }]}>Frequency</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                   {['daily', 'twice daily', 'thrice daily', 'weekly', 'as needed'].map(freq => (
                     <TouchableOpacity
                       key={freq}
                       onPress={() => setNewMed(prev => ({ ...prev, frequency: freq }))}
-                      style={[styles.freqChip, newMed.frequency === freq && { backgroundColor: colors.primarySoft, borderColor: colors.primary }]}
+                      activeOpacity={0.7}
+                      style={[md.freqChip, { borderColor: newMed.frequency === freq ? colors.teal : colors.border, backgroundColor: newMed.frequency === freq ? colors.tealSoft : colors.bgPage }]}
                     >
-                      <Text style={[styles.freqChipText, newMed.frequency === freq && { color: colors.primary }]}>{freq}</Text>
+                      <Text style={[md.freqChipText, { color: newMed.frequency === freq ? colors.teal : colors.textMuted }]}>{freq}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
 
-                <Text style={styles.label}>Time Slots</Text>
-                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                <Text style={[md.label, { color: colors.textMuted }]}>Time Slots</Text>
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
                   <TextInput
-                    style={[styles.input, { flex: 1 }]}
+                    style={[md.input, { flex: 1, backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
                     placeholder="HH:MM"
                     value={newTimeSlot}
                     onChangeText={setNewTimeSlot}
@@ -345,21 +371,26 @@ export default function MedicinesScreen() {
                   />
                   <Button label="Add" onPress={addTimeSlot} size="sm" />
                 </View>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                   {newMed.timeSlots.map(slot => (
                     <TouchableOpacity
                       key={slot}
                       onPress={() => removeTimeSlot(slot)}
-                      style={[styles.timeChip, { backgroundColor: colors.primarySoft }]}
+                      activeOpacity={0.7}
+                      style={[md.timeChip, { backgroundColor: colors.tealSoft }]}
                     >
-                      <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600' }}>{slot} ✕</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="time-outline" size={12} color={colors.teal} />
+                        <Text style={{ color: colors.teal, fontSize: 12, fontWeight: '600' }}>{slot}</Text>
+                        <Ionicons name="close-circle" size={14} color={colors.teal} />
+                      </View>
                     </TouchableOpacity>
                   ))}
                 </View>
 
-                <Text style={styles.label}>Instructions (optional)</Text>
+                <Text style={[md.label, { color: colors.textMuted }]}>Instructions (optional)</Text>
                 <TextInput
-                  style={[styles.input, { height: 60, textAlignVertical: 'top' }]}
+                  style={[md.input, { height: 64, textAlignVertical: 'top', backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
                   placeholder="e.g. Take after food"
                   value={newMed.instructions}
                   onChangeText={(text) => setNewMed(prev => ({ ...prev, instructions: text }))}
@@ -367,37 +398,59 @@ export default function MedicinesScreen() {
                   placeholderTextColor={colors.textFaint}
                 />
 
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
                   <Button label="Cancel" onPress={() => setShowAdd(false)} variant="outline" style={{ flex: 1 }} />
-                  <Button label="Add Medicine" onPress={handleAddMedicine} style={{ flex: 1 }} />
+                  <Button label="Add Medicine" onPress={handleAddMedicine} glow={false} style={{ flex: 1.2 }} />
                 </View>
               </View>
             </ScrollView>
           </View>
         </View>
       </Modal>
-    </DrawerLayout>
+    </BottomNavLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const md = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   statHalf: { width: '48%' },
-  doseRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 8 },
-  doseTime: { fontSize: 11, fontWeight: '700', color: Colors.gray500, width: 48 },
-  doseDot: { width: 10, height: 10, borderRadius: 5 },
-  doseName: { fontSize: 13, fontWeight: '600', color: Colors.gray800 },
-  doseDosage: { fontSize: 11, color: Colors.gray500, marginTop: 2 },
-  weeklyBars: { flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6 },
-  bar: { flex: 1, minHeight: 4, width: '100%' },
-  medCard: { flexDirection: 'row', alignItems: 'flex-start' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalCard: { backgroundColor: Colors.white, borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '90%' },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: Colors.gray800 },
-  label: { fontSize: 12, fontWeight: '600', color: Colors.gray700, marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: Colors.gray50, borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 14, fontSize: 14, color: Colors.gray900 },
-  freqChip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: Colors.border },
-  freqChipText: { fontSize: 12, fontWeight: '600', color: Colors.gray600 },
-  timeChip: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12 },
+  doseRow: { 
+    flexDirection: 'row', alignItems: 'center', 
+    paddingVertical: 12, gap: 12,
+  },
+  doseTime: { fontSize: 12, fontWeight: '700', width: 52 },
+  doseDot: { 
+    width: 32, height: 32, borderRadius: 16, 
+    alignItems: 'center', justifyContent: 'center',
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  doseName: { fontSize: 14, fontWeight: '600' },
+  doseDosage: { fontSize: 12, marginTop: 3 },
+  weeklyBars: { flexDirection: 'row', alignItems: 'flex-end', height: 70, gap: 6 },
+  bar: { 
+    flex: 1, minHeight: 6, width: '100%',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  medCard: { 
+    flexDirection: 'row', alignItems: 'flex-start',
+  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalCard: { 
+    borderRadius: 24, width: '100%', maxWidth: 440, maxHeight: '88%',
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 30,
+    elevation: 10,
+  },
+  closeBtn: { padding: 2 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 18, borderBottomWidth: 1 },
+  modalTitle: { fontSize: 17, fontWeight: '700' },
+  label: { fontSize: 12, fontWeight: '600', marginBottom: 8, marginTop: 14 },
+  input: { borderWidth: 1.5, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16, fontSize: 14 },
+  freqChip: { paddingVertical: 9, paddingHorizontal: 16, borderRadius: 22, borderWidth: 1.5 },
+  freqChipText: { fontSize: 12, fontWeight: '600' },
+  timeChip: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 16 },
 });

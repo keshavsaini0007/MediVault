@@ -3,7 +3,8 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import DrawerLayout from '../../components/DrawerLayout';
+import { Ionicons } from '@expo/vector-icons';
+import BottomNavLayout from '../../components/BottomNavLayout';
 import { useTheme } from '../../context/ThemeContext';
 import { useBadges } from '../../context/BadgeContext';
 
@@ -59,13 +60,12 @@ export default function MessagesScreen() {
   /* ── Conversation List ── */
   if (!activeConv) {
     return (
-      <DrawerLayout title="Messages" subtitle="Patient communications"
-        role="doctor" userName={userName} userInitial={userInitial}>
+      <BottomNavLayout title="Messages" subtitle="Patient communications" role="doctor">
         <View style={{ flex: 1, backgroundColor: colors.bgPage }}>
 
           {/* Search */}
           <View style={[s.searchWrap, { backgroundColor: colors.bgCard, borderBottomColor: colors.border }]}>
-            <Text style={{ fontSize: 16, marginRight: 8 }}>🔍</Text>
+            <Ionicons name="search" size={18} color={colors.textFaint} style={{ marginRight: 8 }} />
             <TextInput
               style={[s.searchInput, { color: colors.textPrimary }]}
               placeholder="Search patients…"
@@ -116,7 +116,7 @@ export default function MessagesScreen() {
                         <Text style={{ color: 'white', fontSize: 10, fontWeight: '800' }}>{unreadCount}</Text>
                       </View>
                     ) : (
-                      <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '700' }}>✓✓</Text>
+                      <Ionicons name="checkmark" size={14} color={colors.primary} />
                     )}
                   </View>
                 </TouchableOpacity>
@@ -124,27 +124,26 @@ export default function MessagesScreen() {
             })}
           </ScrollView>
         </View>
-      </DrawerLayout>
+      </BottomNavLayout>
     );
   }
 
   /* ── Chat View ── */
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <DrawerLayout
+      <BottomNavLayout
         title={activePatient?.name || 'Chat'}
         subtitle={activePatient?.condition}
         role="doctor"
-        userName={userName}
-        userInitial={userInitial}
+        showBack
         onBack={handleGoBack}
         headerRight={
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity style={[s.chatIconBtn, { borderColor: 'rgba(255,255,255,0.3)' }]}>
-              <Text style={{ fontSize: 16 }}>📞</Text>
+              <Ionicons name="call-outline" size={18} color="white" />
             </TouchableOpacity>
             <TouchableOpacity style={[s.chatIconBtn, { borderColor: 'rgba(255,255,255,0.3)' }]}>
-              <Text style={{ fontSize: 16 }}>📹</Text>
+              <Ionicons name="videocam-outline" size={18} color="white" />
             </TouchableOpacity>
           </View>
         }
@@ -171,9 +170,7 @@ export default function MessagesScreen() {
                         {msg.time}
                       </Text>
                       {isDoc && (
-                        <Text style={{ fontSize: 10, color: msg.read ? '#86EFAC' : 'rgba(255,255,255,0.5)' }}>
-                          {msg.read ? '✓✓' : '✓'}
-                        </Text>
+                        <Ionicons name={msg.read ? 'checkmark-done' : 'checkmark'} size={12} color={msg.read ? '#86EFAC' : 'rgba(255,255,255,0.5)'} />
                       )}
                     </View>
                   </View>
@@ -193,25 +190,25 @@ export default function MessagesScreen() {
             />
             <TouchableOpacity onPress={handleSend}
               style={[s.sendBtn, { backgroundColor: colors.primary, opacity: input.trim() ? 1 : 0.5 }]}>
-              <Text style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>↑</Text>
+              <Ionicons name="send" size={18} color="white" />
             </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </DrawerLayout>
-    </KeyboardAvoidingView>
-  );
-}
+        </BottomNavLayout>
+      </KeyboardAvoidingView>
+    );
+  }
 
 const s = StyleSheet.create({
-  searchWrap:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  searchWrap:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
   searchInput:  { flex: 1, fontSize: 14 },
-  convItem:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderLeftWidth: 3 },
-  convAvatar:   { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
-  onlineDot:    { position: 'absolute', bottom: 1, right: 1, width: 11, height: 11, borderRadius: 6, borderWidth: 2 },
-  unreadBadge:  { minWidth: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
-  chatIconBtn:  { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  bubble:       { maxWidth: '78%', padding: 12, borderRadius: 18, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
-  inputBar:     { flexDirection: 'row', padding: 12, borderTopWidth: 1, gap: 10, alignItems: 'flex-end' },
-  msgInput:     { flex: 1, borderWidth: 1.5, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, fontSize: 14, maxHeight: 100 },
-  sendBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  convItem:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderLeftWidth: 3, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+  convAvatar:   { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+  onlineDot:    { position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, borderWidth: 2 },
+  unreadBadge:  { minWidth: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  chatIconBtn:  { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  bubble:       { maxWidth: '80%', padding: 14, borderRadius: 20, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, elevation: 2 },
+  inputBar:     { flexDirection: 'row', padding: 14, borderTopWidth: 1, gap: 12, alignItems: 'flex-end' },
+  msgInput:     { flex: 1, borderWidth: 1.5, borderRadius: 24, paddingHorizontal: 18, paddingVertical: 12, fontSize: 14, maxHeight: 100 },
+  sendBtn:      { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, elevation: 3 },
 });

@@ -10,24 +10,29 @@
  */
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
-import Colors from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useTheme } from '../context/ThemeContext';
 
 interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
   onBack?: () => void;
   right?: React.ReactNode;
-  /** Override background colour — defaults to primaryDark */
   bg?: string;
 }
 
-export default function ScreenHeader({ title, subtitle, onBack, right, bg = Colors.primaryDark }: ScreenHeaderProps) {
+export default function ScreenHeader({ title, subtitle, onBack, right, bg }: ScreenHeaderProps) {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const backgroundColor = bg || colors.primaryDark;
+  
   return (
-    <SafeAreaView style={{ backgroundColor: bg }}>
-      <View style={[styles.header, { backgroundColor: bg }]}>
+    <SafeAreaView style={{ backgroundColor }}>
+      <View style={[styles.header, { backgroundColor }]}>
         {onBack ? (
-          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <Text style={styles.backIcon}>←</Text>
+          <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={22} color="white" />
           </TouchableOpacity>
         ) : null}
         <View style={{ flex: 1 }}>

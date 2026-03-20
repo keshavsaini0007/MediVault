@@ -5,8 +5,9 @@ import {
 } from 'react-native';
 import { ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import DrawerLayout from '../../components/DrawerLayout';
+import BottomNavLayout from '../../components/BottomNavLayout';
 import { Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
 import { doctorAPI, Patient, MedRecord, Report, Medicine } from '../../services/api';
 
@@ -72,22 +73,22 @@ export default function PatientDetailsScreen() {
     { key: 'timeline',    label: 'Timeline'    },
   ];
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/screens/Patients');
+    }
+  };
+
   return (
-    <DrawerLayout
+    <BottomNavLayout
       title="Patient Details"
       subtitle={patient ? patient.name : 'Loading...'}
       role="doctor"
-      userName="Dr. Sharma"
-      userInitial="DS"
       showBack
+      onBack={handleBack}
     >
-      {/* ── ScrollView wraps ALL content ── */}
-      <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
-        style={{ backgroundColor: colors.bgPage }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
-      >
 
         {/* Patient Header */}
         {loading ? (
@@ -120,13 +121,14 @@ export default function PatientDetailsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={s.tabRow}
-          contentContainerStyle={{ paddingHorizontal: 4 }}
+          style={[s.tabRow, { backgroundColor: colors.bgCard, borderBottomColor: colors.border }]}
+          contentContainerStyle={{ paddingHorizontal: 8 }}
         >
           {tabs.map(t => (
             <TouchableOpacity
               key={t.key}
               onPress={() => setTab(t.key)}
+              activeOpacity={0.7}
               style={[s.tab, tab === t.key && { borderBottomColor: colors.primary }]}
             >
               <Text style={[s.tabTxt, { color: tab === t.key ? colors.primary : colors.textFaint }]}>
@@ -139,12 +141,15 @@ export default function PatientDetailsScreen() {
         {/* MEDICATIONS TAB */}
         {tab === 'medications' && (
           <Card>
-            <CardHeader title="📊 Medication Adherence" right={<Badge label={`${medicines.length} Active`} type="success" />} />
+            <CardHeader title="Medication Adherence" right={<Badge label={`${medicines.length} Active`} type="success" />} />
             <View style={{ padding: 16 }}>
               <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
                 <View style={[s.streakBox, { backgroundColor: colors.successSoft, borderColor: colors.success + '40' }]}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: colors.success, textTransform: 'uppercase' }}>Current Streak</Text>
-                  <Text style={{ fontSize: 24, fontWeight: '900', color: colors.success, marginTop: 4 }}>—d 🔥</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                    <Text style={{ fontSize: 24, fontWeight: '900', color: colors.success }}>—d</Text>
+                    <Ionicons name="flame" size={18} color={colors.success} />
+                  </View>
                 </View>
                 <View style={[s.streakBox, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary, textTransform: 'uppercase' }}>Adherence Rate</Text>
@@ -175,7 +180,7 @@ export default function PatientDetailsScreen() {
         {/* REPORTS TAB */}
         {tab === 'reports' && (
           <Card>
-            <CardHeader title="📋 Latest Reports" />
+            <CardHeader title="Latest Reports" />
             <View style={{ padding: 16 }}>
               {reports.length === 0 ? (
                 <Text style={{ textAlign: 'center', color: colors.textMuted, paddingVertical: 20 }}>No reports found</Text>
@@ -184,7 +189,7 @@ export default function PatientDetailsScreen() {
                   <View key={r._id} style={[{ paddingBottom: 14 }, i < reports.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft, marginBottom: 14 }]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Text style={{ fontSize: 26 }}>📄</Text>
+                        <Ionicons name="document-text-outline" size={24} color={colors.primary} />
                         <View>
                           <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textPrimary }}>{r.originalName}</Text>
                           <Text style={{ fontSize: 11, color: colors.textFaint }}>Uploaded {new Date(r.createdAt).toLocaleDateString()}</Text>
@@ -194,7 +199,10 @@ export default function PatientDetailsScreen() {
                     </View>
                     {r.aiSummary && (
                       <View style={[s.aiBox, { backgroundColor: colors.bgPage, borderLeftColor: colors.primary }]}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary, marginBottom: 4 }}>🤖 AI Summary</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                          <Ionicons name="bulb-outline" size={12} color={colors.primary} />
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>AI Summary</Text>
+                        </View>
                         <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 18 }}>{r.aiSummary}</Text>
                       </View>
                     )}
@@ -208,19 +216,19 @@ export default function PatientDetailsScreen() {
         {/* SYMPTOMS TAB */}
         {tab === 'symptoms' && (
           <Card>
-            <CardHeader title="🩺 Reported Symptoms" />
+            <CardHeader title="Reported Symptoms" />
             <View style={{ padding: 16 }}>
-              {[
-                { symptom: 'High Fever (104°F)', date: 'Mar 14, 2026', severity: 'High'   },
-                { symptom: 'Severe Headache',    date: 'Mar 13, 2026', severity: 'Medium' },
-                { symptom: 'Body Aches',         date: 'Mar 12, 2026', severity: 'Medium' },
-                { symptom: 'Nausea',             date: 'Mar 11, 2026', severity: 'Low'    },
-              ].map((sym, i, arr) => (
-                <View key={i} style={[
-                  { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 12 },
-                  i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft },
-                ]}>
-                  <Text style={{ fontSize: 20 }}>🌡️</Text>
+                  {[
+                    { symptom: 'High Fever (104°F)', date: 'Mar 14, 2026', severity: 'High'   },
+                    { symptom: 'Severe Headache',    date: 'Mar 13, 2026', severity: 'Medium' },
+                    { symptom: 'Body Aches',         date: 'Mar 12, 2026', severity: 'Medium' },
+                    { symptom: 'Nausea',             date: 'Mar 11, 2026', severity: 'Low'    },
+                  ].map((sym, i, arr) => (
+                    <View key={i} style={[
+                      { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 12 },
+                      i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft },
+                    ]}>
+                      <Ionicons name="thermometer-outline" size={20} color={colors.danger} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontWeight: '600', fontSize: 13, color: colors.textPrimary }}>{sym.symptom}</Text>
                     <Text style={{ fontSize: 11, color: colors.textFaint }}>{sym.date}</Text>
@@ -235,20 +243,20 @@ export default function PatientDetailsScreen() {
         {/* TIMELINE TAB */}
         {tab === 'timeline' && (
           <Card>
-            <CardHeader title="📅 Health Timeline" />
+            <CardHeader title="Health Timeline" />
             <View style={{ padding: 16 }}>
               {[
-                { date: 'Mar 14', event: 'High Fever reported',                                        type: 'symptom',  icon: '🌡️' },
-                { date: 'Mar 12', event: 'Medical Report Uploaded',                                      type: 'report',   icon: '🔬' },
-                { date: 'Mar 10', event: 'Treatment started: Medication prescribed',                       type: 'medicine', icon: '💊' },
-                { date: 'Mar 8',  event: 'Patient registered on MediVault',                            type: 'system',   icon: '✅' },
+                { date: 'Mar 14', event: 'High Fever reported',                                        type: 'symptom',  icon: 'thermometer-outline' as const },
+                { date: 'Mar 12', event: 'Medical Report Uploaded',                                      type: 'report',   icon: 'document-text-outline' as const },
+                { date: 'Mar 10', event: 'Treatment started: Medication prescribed',                       type: 'medicine', icon: 'medical-outline' as const },
+                { date: 'Mar 8',  event: 'Patient registered on MediVault',                            type: 'system',   icon: 'checkmark-circle-outline' as const },
               ].map((item, i, arr) => (
                 <View key={i} style={{ flexDirection: 'row', gap: 12, paddingBottom: 16, position: 'relative' }}>
                   {i < arr.length - 1 && (
                     <View style={{ position: 'absolute', left: 18, top: 34, width: 2, height: '100%', backgroundColor: colors.border }} />
                   )}
                   <View style={[s.timelineIcon, { backgroundColor: colors.primarySoft }]}>
-                    <Text style={{ fontSize: 16 }}>{item.icon}</Text>
+                    <Ionicons name={item.icon} size={16} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1, paddingTop: 4 }}>
                     <Text style={{ fontWeight: '600', fontSize: 13, color: colors.textPrimary }}>{item.event}</Text>
@@ -263,7 +271,7 @@ export default function PatientDetailsScreen() {
 
         {/* Recovery Progress */}
         <Card style={{ marginTop: 0 }}>
-          <CardHeader title="📈 Recovery Progress" />
+          <CardHeader title="Recovery Progress" />
           <View style={{ padding: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6, marginBottom: 6 }}>
               {[2, 3, 3, 4, 4, 5, 6].map((v, i) => (
@@ -275,14 +283,17 @@ export default function PatientDetailsScreen() {
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 12, color: colors.textMuted }}>Recovery rate</Text>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.success }}>Improving ↑</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: colors.success }}>Improving</Text>
+                <Ionicons name="arrow-up" size={14} color={colors.success} />
+              </View>
             </View>
           </View>
         </Card>
 
         {/* Patient Info */}
         <Card style={{ marginTop: 0 }}>
-          <CardHeader title="ℹ️ Patient Info" />
+          <CardHeader title="Patient Info" />
           <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
             {[
               { label: 'Blood Type', value: patient?.bloodType    },
@@ -303,7 +314,7 @@ export default function PatientDetailsScreen() {
 
         {/* Add Observation */}
         <Card style={{ marginTop: 0 }}>
-          <CardHeader title="✏️ Add Observation" />
+          <CardHeader title="Add Observation" />
           <View style={{ padding: 16 }}>
             <TextInput
               style={[s.obsInput, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
@@ -321,19 +332,19 @@ export default function PatientDetailsScreen() {
           </View>
         </Card>
 
-      </ScrollView>
-      {/* ── END ScrollView ── */}
-
-      {/* SMS Modal — lives inside DrawerLayout but outside ScrollView ✅ */}
+      {/* SMS Modal — outside BottomNavLayout */}
       <Modal visible={showSMS} transparent animationType="fade">
         <View style={s.modalOverlay}>
           <View style={[s.modalCard, { backgroundColor: colors.bgCard }]}>
             <View style={[s.modalHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[s.modalTitle, { color: colors.textPrimary }]}>
-                📱 Send SMS to {patient?.name ?? 'Patient'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="chatbox" size={18} color={colors.primary} />
+                <Text style={[s.modalTitle, { color: colors.textPrimary }]}>
+                  Send SMS to {patient?.name ?? 'Patient'}
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setShowSMS(false)}>
-                <Text style={{ fontSize: 18, color: colors.textFaint }}>✕</Text>
+                <Ionicons name="close-circle" size={22} color={colors.textFaint} />
               </TouchableOpacity>
             </View>
             <View style={{ padding: 16 }}>
@@ -351,7 +362,7 @@ export default function PatientDetailsScreen() {
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
                 <Button label="Cancel" onPress={() => setShowSMS(false)} variant="outline" style={{ flex: 1 }} />
                 <Button
-                  label="🚀 Send"
+                  label="Send"
                   onPress={() => { Alert.alert('Sent!', 'SMS sent via Twilio.'); setShowSMS(false); setSmsMsg(''); }}
                   style={{ flex: 1 }}
                 />
@@ -361,21 +372,21 @@ export default function PatientDetailsScreen() {
         </View>
       </Modal>
 
-    </DrawerLayout>
+    </BottomNavLayout>
   );
 }
 
 const s = StyleSheet.create({
-  bigAvatar:    { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
-  tabRow:       { marginBottom: 14, maxHeight: 52 },
-  tab:          { paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 2.5, borderBottomColor: 'transparent', marginRight: 4 },
-  tabTxt:       { fontSize: 13, fontWeight: '600' },
-  streakBox:    { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1 },
-  aiBox:        { borderRadius: 8, padding: 10, borderLeftWidth: 3 },
-  timelineIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1 },
-  obsInput:     { borderWidth: 1.5, borderRadius: 10, padding: 12, height: 90, textAlignVertical: 'top', fontSize: 14 },
+  bigAvatar:    { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+  tabRow:       { marginBottom: 14, maxHeight: 52, backgroundColor: 'transparent' },
+  tab:          { paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 3, borderBottomColor: 'transparent', marginRight: 0 },
+  tabTxt:       { fontSize: 14, fontWeight: '600' },
+  streakBox:    { flex: 1, padding: 16, borderRadius: 14, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  aiBox:        { borderRadius: 10, padding: 12, borderLeftWidth: 4, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  timelineIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  obsInput:     { borderWidth: 1.5, borderRadius: 12, padding: 14, height: 100, textAlignVertical: 'top', fontSize: 14 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalCard:    { borderRadius: 16, width: '100%' },
-  modalHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
-  modalTitle:   { fontSize: 15, fontWeight: '700' },
+  modalCard:    { borderRadius: 20, width: '100%', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, elevation: 8 },
+  modalHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 18, borderBottomWidth: 1 },
+  modalTitle:   { fontSize: 16, fontWeight: '700' },
 });

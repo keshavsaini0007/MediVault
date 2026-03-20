@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { notificationAPI, Notification } from '../services/api';
 
 const TOKEN_KEY = '@MediVault:authToken';
@@ -72,12 +73,12 @@ const INIT_PATIENT_SETTINGS: PatientSettings = {
   streakMilestones: true,
 };
 
-const getNotifIcon = (type: string): string => {
+const getNotifIcon = (type: string): keyof typeof Ionicons.glyphMap => {
   switch (type) {
-    case 'dose_missed': return '💊';
-    case 'symptom_urgent': return '🔥';
-    case 'system': return '🔔';
-    default: return '📋';
+    case 'dose_missed': return 'medical-outline';
+    case 'symptom_urgent': return 'alert-circle';
+    case 'system': return 'notifications-outline';
+    default: return 'document-text-outline';
   }
 };
 

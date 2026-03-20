@@ -3,6 +3,7 @@ import {
   View, StyleSheet, ScrollView, TouchableOpacity,
   Text, Modal, SafeAreaView, Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { useTheme } from '../context/ThemeContext';
@@ -63,7 +64,7 @@ export default function AppLayout({
                 style={[styles.hamburger, { backgroundColor: colors.bgCard, borderColor: colors.border }]}
                 accessibilityLabel="Open menu"
               >
-                <Text style={{ fontSize: 14 }}>☰</Text>
+                <Ionicons name="menu-outline" size={20} color={colors.textPrimary} />
               </TouchableOpacity>
               {actions}
             </View>

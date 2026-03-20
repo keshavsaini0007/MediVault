@@ -4,10 +4,10 @@ import {
   TextInput, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import DrawerLayout from '../../components/DrawerLayout';
-import Colors from '../../constants/colors';
-import { Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
+import BottomNavLayout from '../../components/BottomNavLayout';
+import { Card, CardHeader, Badge, Button, ProgressBar, IconBox } from '../../components/UI';
 import { symptomAPI, SymptomLog } from '../../services/api';
 
 const doctors = [
@@ -66,50 +66,89 @@ export default function SymptomsScreen() {
     }
   };
 
+  const getUrgencyIcon = (urgency: string): keyof typeof Ionicons.glyphMap => {
+    if (urgency === 'high') return 'alert-circle';
+    if (urgency === 'medium') return 'warning';
+    return 'checkmark-circle';
+  };
+
+  const getUrgencyBg = (urgency: string) => {
+    if (urgency === 'high') return colors.dangerSoft;
+    if (urgency === 'medium') return colors.warningSoft;
+    return colors.successSoft;
+  };
+
+  const getUrgencyColor = (urgency: string) => {
+    if (urgency === 'high') return colors.danger;
+    if (urgency === 'medium') return colors.warning;
+    return colors.success;
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/screens/PatientDashboard');
+    }
+  };
+
   return (
-    <DrawerLayout title="Symptom Checker" subtitle="AI-powered triage assistant" showBack>
+    <BottomNavLayout 
+      title="Symptom Checker" 
+      subtitle="AI-powered triage assistant" 
+      role="patient"
+      showBack
+      onBack={handleBack}
+    >
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}>
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}>
 
         {/* Input */}
-        <Card>
-          <CardHeader title="🩺 Describe Your Symptoms" />
+        <Card glowColor={colors.teal}>
+          <CardHeader title="Describe Your Symptoms" icon="chatbox-ellipses-outline" />
           <View style={{ padding: 16 }}>
-            <Text style={styles.label}>What symptoms are you experiencing?</Text>
+            <Text style={[sy.label, { color: colors.textMuted }]}>What symptoms are you experiencing?</Text>
             <TextInput
-              style={[styles.input, { height: 90, textAlignVertical: 'top' }]}
-              placeholder="e.g. I have high fever since yesterday, severe headache, body ache…"
+              style={[sy.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
+              placeholder="e.g. I have high fever since yesterday, severe headache, body ache..."
               value={symptoms}
               onChangeText={setSymptoms}
               multiline
-              placeholderTextColor={Colors.gray400}
+              placeholderTextColor={colors.textFaint}
             />
 
-            <Text style={[styles.label, { marginTop: 14 }]}>Quick Select Common Symptoms</Text>
-            <View style={styles.chipsRow}>
+            <Text style={[sy.label, { color: colors.textMuted, marginTop: 16 }]}>Quick Select Common Symptoms</Text>
+            <View style={sy.chipsRow}>
               {CHIPS.map(s => {
                 const active = selectedChips.includes(s);
                 return (
-                  <TouchableOpacity key={s} onPress={() => toggleChip(s)} style={[styles.chip, active && styles.chipActive]}>
-                    <Text style={[styles.chipText, active && { color: Colors.primary }]}>{active ? '✓ ' : ''}{s}</Text>
+                  <TouchableOpacity key={s} onPress={() => toggleChip(s)} activeOpacity={0.7}
+                    style={[
+                      sy.chip,
+                      { borderColor: active ? colors.teal : colors.border, backgroundColor: active ? colors.tealSoft : colors.bgPage },
+                    ]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                      {active && <Ionicons name="checkmark" size={13} color={colors.teal} />}
+                      <Text style={[sy.chipText, { color: active ? colors.teal : colors.textMuted }]}>{s}</Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
             <Button
-              label={loading ? '🤖 Analysing with AI...' : '🔍 Analyse Symptoms'}
+              label={loading ? 'Analysing with AI...' : 'Analyse Symptoms'}
               onPress={analyze}
               disabled={loading}
               size="lg"
-              style={{ marginTop: 18, width: '100%' }}
+              style={{ marginTop: 20, width: '100%' }}
             />
 
             {loading && (
-              <View style={{ alignItems: 'center', marginTop: 10 }}>
-                <ActivityIndicator color={Colors.primary} />
-                <Text style={{ fontSize: 11, color: Colors.gray400, marginTop: 6 }}>AI is processing your symptoms...</Text>
+              <View style={{ alignItems: 'center', marginTop: 12 }}>
+                <ActivityIndicator color={colors.teal} />
+                <Text style={{ fontSize: 12, color: colors.textFaint, marginTop: 8 }}>AI is processing your symptoms...</Text>
               </View>
             )}
           </View>
@@ -118,21 +157,27 @@ export default function SymptomsScreen() {
         {/* Latest Result */}
         {history.length > 0 && (
           <>
-            <View style={styles.disclaimer}>
-              <Text style={styles.disclaimerText}>⚠️ <Text style={{ fontWeight: '700' }}>AI Disclaimer:</Text> For informational purposes only. Not a substitute for professional medical diagnosis.</Text>
+            <View style={[sy.disclaimer, { backgroundColor: colors.warningSoft, borderColor: colors.warning }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <IconBox icon="warning" color={colors.warning} bg={colors.warningSoft} size={28} />
+                <Text style={[sy.disclaimerText, { color: colors.warning }]}>AI Disclaimer: For informational purposes only. Not a substitute for professional medical diagnosis.</Text>
+              </View>
             </View>
-            <Card>
+            <Card glowColor={getUrgencyColor(history[0].urgency)}>
               <View style={{ padding: 16 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Text style={{ fontSize: 28 }}>
-                      {history[0].urgency === 'high' ? '🚨' : history[0].urgency === 'medium' ? '⚠️' : '✅'}
-                    </Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <IconBox 
+                      icon={getUrgencyIcon(history[0].urgency)} 
+                      color={getUrgencyColor(history[0].urgency)} 
+                      bg={getUrgencyBg(history[0].urgency)} 
+                      size={48} 
+                    />
                     <View>
-                      <Text style={{ fontWeight: '700', fontSize: 15, color: Colors.gray800 }}>
+                      <Text style={{ fontWeight: '700', fontSize: 16, color: colors.textPrimary }}>
                         {history[0].aiConditions?.[0] || 'Analysis Complete'}
                       </Text>
-                      <Text style={{ fontSize: 11, color: Colors.gray500 }}>
+                      <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
                         Recommended: {history[0].specialistType}
                       </Text>
                     </View>
@@ -142,21 +187,24 @@ export default function SymptomsScreen() {
                     type={history[0].urgency === 'high' ? 'danger' : history[0].urgency === 'medium' ? 'warning' : 'success'}
                   />
                 </View>
-                <View style={{ backgroundColor: Colors.gray50, padding: 12, borderRadius: 8, marginBottom: 8 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary, marginBottom: 4 }}>YOUR SYMPTOMS</Text>
-                  <Text style={{ fontSize: 13, color: Colors.gray700, lineHeight: 20 }}>{history[0].symptoms}</Text>
+                <View style={{ backgroundColor: colors.bgPage, padding: 14, borderRadius: 12, marginBottom: 10 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.teal, marginBottom: 6 }}>YOUR SYMPTOMS</Text>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 21 }}>{history[0].symptoms}</Text>
                 </View>
-                <View style={{ backgroundColor: Colors.primarySoft, padding: 12, borderRadius: 8 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary, marginBottom: 4 }}>AI ADVICE</Text>
-                  <Text style={{ fontSize: 13, color: Colors.gray700, lineHeight: 20 }}>{history[0].advice}</Text>
+                <View style={{ backgroundColor: colors.tealSoft, padding: 14, borderRadius: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <Ionicons name="bulb" size={16} color={colors.teal} />
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.teal }}>AI ADVICE</Text>
+                  </View>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 21 }}>{history[0].advice}</Text>
                 </View>
                 {history[0].aiConditions && history[0].aiConditions.length > 1 && (
-                  <View style={{ marginTop: 12 }}>
-                    <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.gray500, marginBottom: 6 }}>POSSIBLE CONDITIONS</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  <View style={{ marginTop: 14 }}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textFaint, marginBottom: 8 }}>POSSIBLE CONDITIONS</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                       {history[0].aiConditions.slice(1).map((condition, idx) => (
-                        <View key={idx} style={{ backgroundColor: Colors.gray100, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-                          <Text style={{ fontSize: 12, color: Colors.gray700 }}>{condition}</Text>
+                        <View key={idx} style={{ backgroundColor: colors.tealSoft, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14 }}>
+                          <Text style={{ fontSize: 12, color: colors.teal }}>{condition}</Text>
                         </View>
                       ))}
                     </View>
@@ -168,19 +216,20 @@ export default function SymptomsScreen() {
         )}
 
         {/* Matched Doctors */}
-        <Card>
-          <CardHeader title="👨‍⚕️ Matched Doctors" />
+        <Card glowColor={colors.primary}>
+          <CardHeader title="Matched Doctors" icon="people-outline" />
           <View style={{ padding: 16 }}>
             {doctors.map((doc, i) => (
-              <View key={i} style={[styles.docRow, i < doctors.length - 1 && { borderBottomWidth: 1, borderBottomColor: Colors.gray100, paddingBottom: 12, marginBottom: 12 }]}>
-                <View style={styles.docAvatar}><Text style={{ fontSize: 22 }}>👨‍⚕️</Text></View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: '700', fontSize: 13, color: Colors.gray800 }}>{doc.name}</Text>
-                  <Text style={{ fontSize: 11, color: Colors.gray500 }}>{doc.spec}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <Text style={{ fontSize: 11, color: '#F59E0B' }}>★ {doc.rating}</Text>
-                    <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: doc.available ? Colors.success : Colors.gray300 }} />
-                    <Text style={{ fontSize: 11, color: doc.available ? Colors.success : Colors.gray400 }}>{doc.available ? 'Available' : 'Busy'}</Text>
+              <View key={i} style={[sy.docRow, i < doctors.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft, paddingBottom: 14, marginBottom: 14 }]}>
+                <IconBox icon="person" color={colors.primary} bg={colors.primarySoft} size={46} />
+                <View style={{ flex: 1, marginLeft: 4 }}>
+                  <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textPrimary }}>{doc.name}</Text>
+                  <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>{doc.spec}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    <Ionicons name="star" size={12} color="#F59E0B" />
+                    <Text style={{ fontSize: 12, color: '#F59E0B' }}>{doc.rating}</Text>
+                    <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: doc.available ? colors.success : colors.gray300 }} />
+                    <Text style={{ fontSize: 12, color: doc.available ? colors.success : colors.textFaint }}>{doc.available ? 'Available' : 'Busy'}</Text>
                   </View>
                 </View>
                 <Button label={doc.available ? 'Book' : 'Full'} onPress={() => {}} disabled={!doc.available} size="sm" variant={doc.available ? 'primary' : 'outline'} />
@@ -190,19 +239,20 @@ export default function SymptomsScreen() {
         </Card>
 
         {/* Recent Checks */}
-        <Card>
-          <CardHeader title="📜 Recent Checks" />
+        <Card glowColor={colors.teal}>
+          <CardHeader title="Recent Checks" icon="time-outline" />
           <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
             {history.length === 0 ? (
-              <Text style={{ fontSize: 12, color: Colors.gray500, textAlign: 'center', paddingVertical: 10 }}>
-                No symptom history yet
-              </Text>
+              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                <IconBox icon="document-text-outline" color={colors.textFaint} bg={colors.tealSoft} size={52} />
+                <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 12 }}>No symptom history yet</Text>
+              </View>
             ) : (
               history.slice(0, 5).map((c, i) => (
-                <View key={c._id || i} style={[{ paddingVertical: 10 }, i < Math.min(history.length, 5) - 1 && { borderBottomWidth: 1, borderBottomColor: Colors.gray100 }]}>
-                  <Text style={{ fontWeight: '600', fontSize: 13, color: Colors.gray800 }}>{c.symptoms}</Text>
-                  <Text style={{ fontSize: 11, color: Colors.gray500 }}>
-                    {new Date(c.createdAt).toLocaleDateString()} · {c.aiConditions?.[0] || 'Analyzed'}
+                <View key={c._id || i} style={[{ paddingVertical: 12 }, i < Math.min(history.length, 5) - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
+                  <Text style={{ fontWeight: '600', fontSize: 13, color: colors.textPrimary }}>{c.symptoms}</Text>
+                  <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 3 }}>
+                    {new Date(c.createdAt).toLocaleDateString()} - {c.aiConditions?.[0] || 'Analyzed'}
                   </Text>
                 </View>
               ))
@@ -211,19 +261,20 @@ export default function SymptomsScreen() {
         </Card>
 
       </ScrollView>
-    </DrawerLayout>
+    </BottomNavLayout>
   );
 }
 
-const styles = StyleSheet.create({
-  label: { fontSize: 12, fontWeight: '600', color: Colors.gray700, marginBottom: 6 },
-  input: { backgroundColor: Colors.gray50, borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, fontSize: 14, color: Colors.gray900 },
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.white },
-  chipActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySoft },
-  chipText: { fontSize: 12, fontWeight: '600', color: Colors.gray600 },
-  disclaimer: { backgroundColor: Colors.warningSoft, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: Colors.warning, marginBottom: 12 },
-  disclaimerText: { fontSize: 12, color: Colors.warning },
-  docRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  docAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+const sy = StyleSheet.create({
+  label: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  input: { borderWidth: 1.5, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16, fontSize: 14, minHeight: 100 },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 22, borderWidth: 1.5 },
+  chipActive: {},
+  chipText: { fontSize: 12, fontWeight: '600' },
+  disclaimer: { borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 14 },
+  disclaimerText: { fontSize: 12, flex: 1, lineHeight: 18 },
+  docRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  docAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  urgencyIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

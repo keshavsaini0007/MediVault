@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Animated, Alert, RefreshControl } from 'react-native';
 import { useRouter, Href } from 'expo-router';
-import DrawerLayout from '../../components/DrawerLayout';
-import { StatCard, Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
+import { Ionicons } from '@expo/vector-icons';
+import BottomNavLayout from '../../components/BottomNavLayout';
+import { StatCard, Card, CardHeader, Badge, Button, ProgressBar, IconBox, ColorIcon } from '../../components/UI';
 import { useTheme } from '../../context/ThemeContext';
 import { patientAPI, medicineAPI } from '../../services/api';
 
@@ -54,29 +55,40 @@ function MedRow({ med, onMarkTaken }: { med: DueDose; onMarkTaken: (med: DueDose
       <TouchableOpacity activeOpacity={1}
         onPressIn={() => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, tension: 200 }).start()}
         onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200 }).start()}
-        style={[s.medRow, { backgroundColor: colors.bgCardHover, borderColor: colors.border }]}>
-        <View style={[s.medDotBig, {
-          backgroundColor: isOverdue ? colors.dangerSoft + '22' : colors.successSoft + '22',
-          borderColor: isOverdue ? colors.danger + '55' : colors.success + '55'
+        style={[s.medRow, { 
+          backgroundColor: colors.bgCard,
+          shadowColor: isOverdue ? colors.danger : colors.success,
+          shadowOpacity: 0.12,
+          borderColor: colors.borderSoft,
         }]}>
-          <View style={[s.medDotInner, {
-            backgroundColor: isOverdue ? colors.danger : colors.success
-          }]} />
+        <View style={[s.medDotBig, {
+          backgroundColor: isOverdue ? colors.dangerSoft : colors.successSoft,
+          shadowColor: isOverdue ? colors.danger : colors.success,
+          shadowOpacity: 0.25,
+        }]}>
+          <Ionicons 
+            name={isOverdue ? "alert-circle" : "checkmark-circle"} 
+            size={18} 
+            color={isOverdue ? colors.danger : colors.success} 
+          />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: '700', fontSize: 13, color: colors.textPrimary }}>{med.medicineName}</Text>
-          <Text style={{ fontSize: 11, color: colors.textFaint, marginTop: 1 }}>
-            ⏰ {med.slot} · {med.dosage}
-          </Text>
+          <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textPrimary }}>{med.medicineName}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+            <Ionicons name="time-outline" size={12} color={colors.textFaint} />
+            <Text style={{ fontSize: 12, color: colors.textFaint }}>{med.slot} · {med.dosage}</Text>
+          </View>
         </View>
         {isDue ? (
           <Button
-            label={med.status === 'missed' ? 'Retake ✓' : 'Mark Taken ✓'}
+            label={med.status === 'missed' ? 'Retake' : 'Take'}
             onPress={() => onMarkTaken(med)}
             size="sm"
+            icon={isOverdue ? "refresh" : "checkmark"}
+            pill
           />
         ) : (
-          <Badge label="Taken" type="success" />
+          <Badge label="Taken" type="success" icon="checkmark-circle" />
         )}
       </TouchableOpacity>
     </Animated.View>
@@ -84,20 +96,26 @@ function MedRow({ med, onMarkTaken }: { med: DueDose; onMarkTaken: (med: DueDose
 }
 
 function QuickActionItem({ icon, label, route, bg, fg }: {
-  icon: string; label: string; route: Href; bg: string; fg: string;
+  icon: keyof typeof Ionicons.glyphMap; label: string; route: Href; bg: string; fg: string;
 }) {
   const router = useRouter();
+  const { colors } = useTheme();
   const scale = useRef(new Animated.Value(1)).current;
   return (
     <Animated.View style={[s.qaItem, { transform: [{ scale }] }]}>
       <TouchableOpacity
-        onPressIn={() => Animated.spring(scale, { toValue: 0.91, useNativeDriver: true, tension: 200 }).start()}
+        onPressIn={() => Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, tension: 200 }).start()}
         onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200 }).start()}
         onPress={() => router.push(route)}
-        style={[s.qaBtn, { backgroundColor: bg, borderColor: fg + '30' }]}
+        style={[s.qaBtn, { 
+          backgroundColor: colors.bgCard,
+          shadowColor: fg,
+          shadowOpacity: 0.15,
+          borderColor: colors.borderSoft,
+        }]}
         activeOpacity={1}>
-        <Text style={{ fontSize: 28 }}>{icon}</Text>
-        <Text style={[s.qaLabel, { color: fg }]}>{label}</Text>
+        <ColorIcon icon={icon} color={fg} bg={bg} size={48} />
+        <Text style={[s.qaLabel, { color: colors.textPrimary }]}>{label}</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -172,11 +190,11 @@ export default function PatientDashboard() {
     }
   };
 
-  const quickActions: Array<{ icon: string; label: string; route: Href; bg: string; fg: string }> = [
-    { icon: '🩺', label: 'Symptoms', route: '/screens/Symptoms', bg: colors.primarySoft, fg: colors.primary },
-    { icon: '📋', label: 'Reports', route: '/screens/Reports', bg: colors.tealSoft, fg: colors.teal },
-    { icon: '💊', label: 'Medicines', route: '/screens/Medicines', bg: colors.successSoft, fg: colors.success },
-    { icon: '🔲', label: 'QR Profile', route: '/screens/QRProfile', bg: colors.accentSoft, fg: colors.accent },
+  const quickActions: Array<{ icon: keyof typeof Ionicons.glyphMap; label: string; route: Href; bg: string; fg: string }> = [
+    { icon: 'fitness-outline', label: 'Symptoms', route: '/screens/Symptoms', bg: colors.primarySoft, fg: colors.primary },
+    { icon: 'document-text-outline', label: 'Reports', route: '/screens/Reports', bg: colors.tealSoft, fg: colors.teal },
+    { icon: 'medical-outline', label: 'Medicines', route: '/screens/Medicines', bg: colors.successSoft, fg: colors.success },
+    { icon: 'qr-code-outline', label: 'QR Profile', route: '/screens/QRProfile', bg: colors.accentSoft, fg: colors.accent },
   ];
 
   const getGreeting = () => {
@@ -196,69 +214,82 @@ export default function PatientDashboard() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const getReportIcon = (type: string) => {
+  const getReportIcon = (type: string): keyof typeof Ionicons.glyphMap => {
     const lower = type.toLowerCase();
-    if (lower.includes('blood')) return '🩸';
-    if (lower.includes('x-ray') || lower.includes('xray')) return '📷';
-    if (lower.includes('ultrasound')) return '🔊';
-    if (lower.includes('ecg') || lower.includes('ekg')) return '❤️';
-    if (lower.includes('ct')) return '🧠';
-    if (lower.includes('mri')) return '🔬';
-    return '📄';
+    if (lower.includes('blood')) return 'water-outline';
+    if (lower.includes('x-ray') || lower.includes('xray')) return 'image-outline';
+    if (lower.includes('ultrasound')) return 'pulse-outline';
+    if (lower.includes('ecg') || lower.includes('ekg')) return 'heart-outline';
+    if (lower.includes('ct')) return 'scan-outline';
+    if (lower.includes('mri')) return 'magnet-outline';
+    return 'document-outline';
   };
 
   return (
-    <DrawerLayout title="My Health Dashboard" subtitle={`${getGreeting()}, ${userName || 'User'}! 👋`}
-      role="patient" userName={userName}>
+    <BottomNavLayout 
+      title="My Health" 
+      subtitle={`${getGreeting()}, ${userName || 'User'}!`}
+      role="patient"
+    >
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
         style={{ backgroundColor: colors.bgPage }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {/* Welcome Banner */}
-        <View style={[s.banner, { backgroundColor: isDark ? '#062d2d' : '#0B4F6F' }]}>
+        <View style={[s.banner, { 
+          backgroundColor: isDark ? '#062d2d' : colors.teal,
+          shadowColor: colors.teal,
+          shadowOpacity: 0.3,
+        }]}>
           <View style={{ flex: 1 }}>
-            <Text style={s.bannerTitle}>{getGreeting()}, {userName || 'User'}! 🌟</Text>
+            <Text style={s.bannerTitle}>{getGreeting()}, {userName || 'User'}!</Text>
             <Text style={s.bannerSub}>
               {dashboard ? `${dashboard.scheduledDosesToday} medications scheduled today` : 'Loading...'}
             </Text>
             <View style={s.bannerBtns}>
-              <TouchableOpacity onPress={() => router.push('/screens/Medicines')}
-                style={[s.bannerBtn, { backgroundColor: 'rgba(255,255,255,0.9)' }]}>
-                <Text style={[s.bannerBtnText, { color: '#0B4F6F' }]}>View Schedule</Text>
+              <TouchableOpacity onPress={() => router.push('/screens/Medicines')} activeOpacity={0.8}
+                style={[s.bannerBtn, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+                <Text style={[s.bannerBtnText, { color: colors.teal }]}>View Schedule</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push('/screens/Symptoms')}
-                style={[s.bannerBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-                <Text style={[s.bannerBtnText, { color: 'white' }]}>Report Symptom</Text>
+              <TouchableOpacity onPress={() => router.push('/screens/Symptoms')} activeOpacity={0.8}
+                style={[s.bannerBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <Text style={[s.bannerBtnText, { color: 'white' }]}>Report</Text>
               </TouchableOpacity>
             </View>
           </View>
-          <Text style={{ fontSize: 44 }}>🩺</Text>
+          <View style={s.bannerIcon}>
+            <Ionicons name="fitness" size={36} color="rgba(255,255,255,0.6)" />
+          </View>
           <View style={s.circle1} />
           <View style={s.circle2} />
+          <View style={s.circle3} />
         </View>
 
         {/* Stats */}
         <View style={s.statsGrid}>
           <View style={s.statHalf}>
-            <StatCard icon="💊" value={String(dashboard?.activeMedicines ?? 0)} label="Medicines" iconBg={colors.primarySoft} />
+            <StatCard icon="medical-outline" value={String(dashboard?.activeMedicines ?? 0)} label="Medicines" iconBg={colors.primarySoft} />
           </View>
           <View style={s.statHalf}>
-            <StatCard icon="✅" value={`${dashboard?.adherencePercent ?? 0}%`} label="Adherence" iconBg={colors.successSoft} valueColor={colors.success} />
+            <StatCard icon="checkmark-circle-outline" value={`${dashboard?.adherencePercent ?? 0}%`} label="Adherence" iconBg={colors.successSoft} valueColor={colors.success} iconColor={colors.success} />
           </View>
           <View style={s.statHalf}>
-            <StatCard icon="📋" value={String(dashboard?.recentRecordsCount ?? 0)} label="Records (7d)" iconBg={colors.tealSoft} valueColor={colors.teal} />
+            <StatCard icon="folder-outline" value={String(dashboard?.recentRecordsCount ?? 0)} label="Records (7d)" iconBg={colors.tealSoft} valueColor={colors.teal} iconColor={colors.teal} />
           </View>
           <View style={s.statHalf}>
-            <StatCard icon="🔔" value={String(dashboard?.unreadNotifications ?? 0)} label="Alerts" iconBg={colors.accentSoft} valueColor={colors.accent} />
+            <StatCard icon="notifications-outline" value={String(dashboard?.unreadNotifications ?? 0)} label="Alerts" iconBg={colors.accentSoft} valueColor={colors.accent} iconColor={colors.accent} />
           </View>
         </View>
 
         {/* Today's Medications */}
-        <Card>
-          <CardHeader title="💊 Today's Medications" right={
+        <Card variant="elevated" glowColor={colors.teal} accentColor={colors.teal}>
+          <CardHeader title="Today's Medications" right={
             <TouchableOpacity onPress={() => router.push('/screens/Medicines')}>
-              <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>View All</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>View All</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+              </View>
             </TouchableOpacity>
           }/>
           <View style={{ padding: 16, gap: 2 }}>
@@ -281,39 +312,61 @@ export default function PatientDashboard() {
 
         {/* Score + Streak */}
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
-          <View style={[s.scoreCard, { backgroundColor: isDark ? '#0a2c2c' : '#0D9488', flex: 1 }]}>
+          <View style={[s.scoreCard, { 
+            backgroundColor: colors.teal,
+            shadowColor: colors.teal,
+            shadowOpacity: 0.4,
+            flex: 1 
+          }]}>
+            <View style={s.scoreIconWrap}>
+              <Ionicons name="heart" size={24} color="rgba(255,255,255,0.8)" />
+            </View>
             <Text style={s.scoreCaption}>Health Score</Text>
             <Text style={s.scoreVal}>
               {dashboard?.adherencePercent ?? 0}<Text style={s.scoreMax}>/100</Text>
             </Text>
-            <ProgressBar value={dashboard?.adherencePercent ?? 0} color="rgba(255,255,255,0.85)" height={6} style={{ marginVertical: 8 }} />
-            <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
-              {dashboard && dashboard.adherencePercent >= 80 ? 'Excellent 🎉' : dashboard && dashboard.adherencePercent >= 50 ? 'Good 👍' : 'Needs improvement 📈'}
+            <ProgressBar value={dashboard?.adherencePercent ?? 0} color="rgba(255,255,255,0.9)" height={6} style={{ marginVertical: 8 }} />
+            <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
+              {dashboard && dashboard.adherencePercent >= 80 ? 'Excellent' : dashboard && dashboard.adherencePercent >= 50 ? 'Good' : 'Improving'}
             </Text>
           </View>
-          <View style={[s.scoreCard, { backgroundColor: isDark ? '#2d1200' : '#EA580C', flex: 1 }]}>
-            <Text style={{ fontSize: 34 }}>🔥</Text>
+          <View style={[s.scoreCard, { 
+            backgroundColor: colors.accent,
+            shadowColor: colors.accent,
+            shadowOpacity: 0.4,
+            flex: 1 
+          }]}>
+            <View style={s.scoreIconWrap}>
+              <Ionicons name="flame" size={24} color="rgba(255,255,255,0.8)" />
+            </View>
             <Text style={s.scoreVal}>{dashboard?.takenToday ?? 0}</Text>
             <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 }}>Doses Taken</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, marginTop: 2 }}>{dashboard?.pendingToday ?? 0} pending 💪</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11, marginTop: 2 }}>{dashboard?.pendingToday ?? 0} pending</Text>
           </View>
         </View>
 
         {/* Weekly Adherence */}
-        <Card>
-          <CardHeader title="📈 Weekly Adherence" right={
-            <Badge
-              label={dashboard?.adherencePercent && dashboard.adherencePercent >= 80 ? 'On track' : 'Keep going'}
-              type={dashboard?.adherencePercent && dashboard.adherencePercent >= 80 ? 'success' : 'warning'}
-            />
-          }/>
+        <Card variant="elevated" glowColor={colors.teal}>
+          <CardHeader 
+            title="Weekly Adherence" 
+            icon="analytics-outline"
+            right={
+              <Badge
+                label={dashboard?.adherencePercent && dashboard.adherencePercent >= 80 ? 'On track' : 'Keep going'}
+                type={dashboard?.adherencePercent && dashboard.adherencePercent >= 80 ? 'success' : 'warning'}
+              />
+            }
+          />
           <View style={{ padding: 16 }}>
             <View style={s.barChart}>
               {weeklyTrend.map((day, i) => (
                 <View key={i} style={{ flex: 1, alignItems: 'center', gap: 5 }}>
                   <View style={[s.bar, {
                     height: Math.max(4, day.adherencePercent * 0.6),
-                    backgroundColor: i === weeklyTrend.length - 1 ? colors.primary : colors.primarySoft,
+                    backgroundColor: i === weeklyTrend.length - 1 ? colors.teal : colors.tealSoft,
+                    shadowColor: i === weeklyTrend.length - 1 ? colors.teal : 'transparent',
+                    shadowOpacity: i === weeklyTrend.length - 1 ? 0.4 : 0,
+                    shadowRadius: 4,
                     borderTopLeftRadius: 4, borderTopRightRadius: 4,
                   }]} />
                   <Text style={{ fontSize: 10, color: colors.textFaint }}>{getDayName(day.date)}</Text>
@@ -324,12 +377,19 @@ export default function PatientDashboard() {
         </Card>
 
         {/* Recent Reports */}
-        <Card>
-          <CardHeader title="📁 Recent Reports" right={
-            <TouchableOpacity onPress={() => router.push('/screens/Reports')}>
-              <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>View All →</Text>
-            </TouchableOpacity>
-          }/>
+        <Card variant="elevated" glowColor={colors.teal}>
+          <CardHeader 
+            title="Recent Reports" 
+            icon="document-text-outline"
+            right={
+              <TouchableOpacity onPress={() => router.push('/screens/Reports')}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ color: colors.teal, fontSize: 12, fontWeight: '700' }}>View All</Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.teal} />
+                </View>
+              </TouchableOpacity>
+            }
+          />
           <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
             {recentReports.length === 0 ? (
               <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>
@@ -337,52 +397,105 @@ export default function PatientDashboard() {
               </Text>
             ) : (
               recentReports.map((r, i) => (
-                <View key={r._id} style={[s.reportRow, i < recentReports.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
-                  <View style={[s.reportIcon, { backgroundColor: colors.bgCardHover }]}>
-                    <Text style={{ fontSize: 20 }}>{getReportIcon(r.reportType)}</Text>
-                  </View>
+                <TouchableOpacity 
+                  key={r._id} 
+                  style={[s.reportRow, i < recentReports.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}
+                  activeOpacity={0.7}
+                >
+                  <IconBox 
+                    icon={getReportIcon(r.reportType)} 
+                    color={colors.teal} 
+                    bg={colors.tealSoft}
+                    size={42}
+                  />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textPrimary }}>{r.reportType}</Text>
-                    <Text style={{ fontSize: 11, color: colors.textFaint }}>{formatReportDate(r.createdAt)}</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>{r.reportType}</Text>
+                    <Text style={{ fontSize: 12, color: colors.textFaint }}>{formatReportDate(r.createdAt)}</Text>
                   </View>
-                  <Badge label="View" type="primary" />
-                </View>
+                  <Badge label="View" type="teal" />
+                </TouchableOpacity>
               ))
             )}
           </View>
         </Card>
       </ScrollView>
-    </DrawerLayout>
+    </BottomNavLayout>
   );
 }
 
 const s = StyleSheet.create({
   banner: {
-    borderRadius: 20, padding: 22, marginBottom: 16,
+    borderRadius: 24, padding: 24, marginBottom: 16,
     flexDirection: 'row', alignItems: 'center', overflow: 'hidden', position: 'relative',
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 28,
+    elevation: 10,
   },
-  bannerTitle: { fontSize: 19, fontWeight: '900', color: 'white', marginBottom: 4, letterSpacing: -0.4 },
-  bannerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 14 },
-  bannerBtns: { flexDirection: 'row', gap: 8 },
-  bannerBtn: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
+  bannerTitle: { fontSize: 20, fontWeight: '900', color: 'white', marginBottom: 4, letterSpacing: -0.4 },
+  bannerSub: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 14 },
+  bannerBtns: { flexDirection: 'row', gap: 10 },
+  bannerBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 },
   bannerBtnText: { fontWeight: '700', fontSize: 12 },
-  circle1: { position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.05)', right: -20, top: -30 },
-  circle2: { position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.04)', right: 40, bottom: -30 },
+  bannerIcon: {
+    width: 70, height: 70, borderRadius: 35,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 8,
+  },
+  circle1: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.08)', right: -40, top: -50 },
+  circle2: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.06)', right: 30, bottom: -30 },
+  circle3: { position: 'absolute', width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.05)', right: 10, top: 20 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   statHalf: { width: '48%' },
-  medRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, marginBottom: 8, borderWidth: 1, gap: 12 },
-  medDotBig: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
-  medDotInner: { width: 12, height: 12, borderRadius: 6 },
+  medRow: { 
+    flexDirection: 'row', alignItems: 'center', 
+    padding: 14, borderRadius: 18, marginBottom: 8, 
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)',
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 16,
+    elevation: 4,
+    gap: 14,
+  },
+  medDotBig: { 
+    width: 40, height: 40, borderRadius: 20, 
+    alignItems: 'center', justifyContent: 'center',
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
   qaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   qaItem: { width: '48%' },
-  qaBtn: { padding: 18, borderRadius: 16, alignItems: 'center', gap: 8, borderWidth: 1 },
-  qaLabel: { fontSize: 13, fontWeight: '700' },
-  scoreCard: { borderRadius: 20, padding: 18, alignItems: 'center' },
-  scoreCaption: { fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 6 },
-  scoreVal: { fontSize: 40, fontWeight: '900', color: 'white', lineHeight: 44 },
-  scoreMax: { fontSize: 16, fontWeight: '400', color: 'rgba(255,255,255,0.45)' },
-  barChart: { flexDirection: 'row', alignItems: 'flex-end', height: 70, gap: 5 },
-  bar: { flex: 1, minHeight: 4 },
-  reportRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  reportIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  qaBtn: { 
+    padding: 16, borderRadius: 20, alignItems: 'center', gap: 10,
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)',
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  qaIconWrap: {
+    width: 52, height: 52, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  qaLabel: { fontSize: 13, fontWeight: '700', color: '#374151' },
+  scoreCard: { 
+    borderRadius: 24, padding: 20, alignItems: 'center',
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 28,
+    elevation: 10,
+  },
+  scoreIconWrap: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 8,
+  },
+  scoreCaption: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginBottom: 4 },
+  scoreVal: { fontSize: 36, fontWeight: '900', color: 'white', lineHeight: 40 },
+  scoreMax: { fontSize: 14, fontWeight: '400', color: 'rgba(255,255,255,0.5)' },
+  barChart: { flexDirection: 'row', alignItems: 'flex-end', height: 70, gap: 6 },
+  bar: { flex: 1, minHeight: 4, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4 },
+  reportRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
 });

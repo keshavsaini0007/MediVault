@@ -5,10 +5,10 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as WebBrowser from 'expo-web-browser';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import DrawerLayout from '../../components/DrawerLayout';
-import Colors from '../../constants/colors';
-import { Card, CardHeader, Badge, Button } from '../../components/UI';
+import BottomNavLayout from '../../components/BottomNavLayout';
+import { Card, CardHeader, Badge, Button, IconBox } from '../../components/UI';
 import { patientAPI, Report } from '../../services/api';
 
 const reportTypes = ['X-Ray', 'Blood Test', 'MRI', 'CT Scan', 'Ultrasound', 'ECG', 'Prescription', 'Other'];
@@ -138,16 +138,16 @@ export default function ReportsScreen() {
     );
   };
 
-  const getReportIcon = (type: string) => {
+  const getReportIcon = (type: string): keyof typeof Ionicons.glyphMap => {
     const lower = type.toLowerCase();
-    if (lower.includes('blood')) return '🩸';
-    if (lower.includes('x-ray') || lower.includes('xray')) return '📷';
-    if (lower.includes('ultrasound')) return '🔊';
-    if (lower.includes('ecg') || lower.includes('ekg')) return '❤️';
-    if (lower.includes('ct')) return '🧠';
-    if (lower.includes('mri')) return '🔬';
-    if (lower.includes('prescription') || lower.includes('rx')) return '💊';
-    return '📄';
+    if (lower.includes('blood')) return 'water-outline';
+    if (lower.includes('x-ray') || lower.includes('xray')) return 'image-outline';
+    if (lower.includes('ultrasound')) return 'pulse-outline';
+    if (lower.includes('ecg') || lower.includes('ekg')) return 'heart-outline';
+    if (lower.includes('ct')) return 'scan-outline';
+    if (lower.includes('mri')) return 'magnet-outline';
+    if (lower.includes('prescription') || lower.includes('rx')) return 'medical-outline';
+    return 'document-outline';
   };
 
   const formatDate = (dateStr: string) => {
@@ -162,94 +162,105 @@ export default function ReportsScreen() {
   };
 
   return (
-    <DrawerLayout title="Reports & Tests" subtitle="Upload and manage your reports" showBack>
+    <BottomNavLayout title="Reports" subtitle="Upload and manage your reports" role="patient">
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
         {/* Upload Card */}
-        <Card>
-          <CardHeader title="📤 Upload Medical Report" />
+        <Card variant="elevated" glowColor={colors.teal}>
+          <CardHeader title="Upload Medical Report" icon="cloud-upload-outline" />
           <View style={{ padding: 16 }}>
-            <Text style={styles.label}>Report Type</Text>
+            <Text style={[rp.label, { color: colors.textMuted }]}>Report Type</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
               {reportTypes.map(t => (
                 <TouchableOpacity
                   key={t}
                   onPress={() => setSelectedType(t)}
-                  style={[styles.typeChip, selectedType === t && styles.typeChipActive]}
+                  activeOpacity={0.7}
+                  style={[
+                    rp.typeChip,
+                    { borderColor: selectedType === t ? colors.teal : colors.border, backgroundColor: selectedType === t ? colors.tealSoft : colors.bgPage },
+                  ]}
                 >
-                  <Text style={[styles.typeChipText, selectedType === t && { color: Colors.primary }]}>
-                    {getReportIcon(t)} {t}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name={getReportIcon(t)} size={16} color={selectedType === t ? colors.teal : colors.textMuted} />
+                    <Text style={[rp.typeChipText, { color: selectedType === t ? colors.teal : colors.textMuted }]}>
+                      {t}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
             {/* Drop zone */}
-            <TouchableOpacity style={styles.dropZone} activeOpacity={0.7} onPress={pickImage}>
+            <TouchableOpacity style={[rp.dropZone, { borderColor: selectedFile ? colors.success : colors.tealSoft, backgroundColor: selectedFile ? colors.successSoft : colors.bgPage }]} activeOpacity={0.7} onPress={pickImage}>
               {selectedFile ? (
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 32, marginBottom: 8 }}>✅</Text>
-                  <Text style={styles.dropText}>File Selected</Text>
-                  <Text style={styles.dropSub}>{selectedFile.fileName || 'image.jpg'}</Text>
-                  <TouchableOpacity onPress={() => setSelectedFile(null)} style={{ marginTop: 8 }}>
-                    <Text style={{ color: Colors.danger, fontSize: 12 }}>Remove</Text>
+                  <IconBox icon="checkmark-circle" color={colors.success} bg={colors.successSoft} size={52} />
+                  <Text style={[rp.dropText, { color: colors.textPrimary, marginTop: 10 }]}>File Selected</Text>
+                  <Text style={[rp.dropSub, { color: colors.textFaint }]}>{selectedFile.fileName || 'image.jpg'}</Text>
+                  <TouchableOpacity onPress={() => setSelectedFile(null)} style={[rp.removeBtn, { backgroundColor: colors.dangerSoft }]} activeOpacity={0.7}>
+                    <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '600' }}>Remove</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <>
-                  <Text style={{ fontSize: 32, marginBottom: 8 }}>📁</Text>
-                  <Text style={styles.dropText}>Tap to upload file</Text>
-                  <Text style={styles.dropSub}>PDF, JPG, PNG up to 10MB</Text>
-                </>
+                <View style={{ alignItems: 'center' }}>
+                  <IconBox icon="cloud-upload-outline" color={colors.teal} bg={colors.tealSoft} size={52} />
+                  <Text style={[rp.dropText, { color: colors.textPrimary, marginTop: 10 }]}>Tap to upload file</Text>
+                  <Text style={[rp.dropSub, { color: colors.textFaint }]}> PDF, JPG, PNG up to 10MB </Text>
+                </View>
               )}
             </TouchableOpacity>
 
             {/* Quick upload buttons */}
-            <View style={styles.quickRow}>
+            <View style={rp.quickRow}>
               {[
-                { icon: '🫁', label: 'X-Ray', bg: Colors.primarySoft },
-                { icon: '🔊', label: 'Ultrasound', bg: Colors.tealSoft },
-                { icon: '🔬', label: 'Blood Test', bg: Colors.dangerSoft },
+                { icon: 'image-outline' as const, label: 'X-Ray', bg: colors.primarySoft, color: colors.primary },
+                { icon: 'pulse-outline' as const, label: 'Ultrasound', bg: colors.tealSoft, color: colors.teal },
+                { icon: 'water-outline' as const, label: 'Blood Test', bg: colors.dangerSoft, color: colors.danger },
               ].map(b => (
                 <TouchableOpacity
                   key={b.label}
-                  style={[styles.quickBtn, { backgroundColor: b.bg }]}
+                  style={[rp.quickBtn, { backgroundColor: b.bg }]}
                   onPress={() => {
                     setSelectedType(b.label);
                     pickImage();
                   }}
+                  activeOpacity={0.7}
                 >
-                  <Text style={{ fontSize: 20 }}>{b.icon}</Text>
-                  <Text style={styles.quickBtnText}>{b.label}</Text>
+                  <Ionicons name={b.icon} size={20} color={b.color} />
+                  <Text style={[rp.quickBtnText, { color: b.color }]}>{b.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Upload button */}
             <Button
-              label={uploading ? '⏳ Uploading & Analysing...' : '🚀 Upload Report'}
+              label={uploading ? 'Uploading & Analysing...' : 'Upload Report'}
               onPress={handleUpload}
               disabled={uploading || !selectedFile}
               size="lg"
-              style={{ marginTop: 12, width: '100%' }}
+              style={{ marginTop: 14, width: '100%' }}
             />
 
             {uploading && (
-              <View style={{ alignItems: 'center', marginTop: 12 }}>
-                <ActivityIndicator color={Colors.primary} />
-                <Text style={{ fontSize: 11, color: Colors.gray400, marginTop: 6 }}>🤖 AI is analysing your report...</Text>
+              <View style={{ alignItems: 'center', marginTop: 14 }}>
+                <ActivityIndicator color={colors.teal} />
+                <Text style={{ fontSize: 12, color: colors.textFaint, marginTop: 8 }}>AI is analysing your report...</Text>
               </View>
             )}
 
             {showSuccess && uploadSuccess && (
-              <View style={styles.successBox}>
-                <Text style={styles.successTitle}>✅ Upload Successful!</Text>
-                <Text style={styles.successBody}>{uploadSuccess.summary}</Text>
-                <Text style={{ fontSize: 10, color: Colors.gray500, marginTop: 6 }}>
-                  ⚠️ Not a substitute for professional medical advice.
+              <View style={[rp.successBox, { backgroundColor: colors.successSoft, borderColor: colors.success + '30' }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <IconBox icon="checkmark-circle" color={colors.success} bg={colors.success} size={24} />
+                  <Text style={[rp.successTitle, { color: colors.success }]}>Upload Successful!</Text>
+                </View>
+                <Text style={[rp.successBody, { color: colors.success }]}>{uploadSuccess.summary}</Text>
+                <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 8 }}>
+                  Not a substitute for professional medical advice.
                 </Text>
               </View>
             )}
@@ -257,47 +268,49 @@ export default function ReportsScreen() {
         </Card>
 
         {/* My Reports */}
-        <Card>
-          <CardHeader title="📁 My Reports" right={<Badge label={`${reports.length} reports`} />} />
+        <Card variant="elevated" glowColor={colors.teal}>
+          <CardHeader title="My Reports" icon="folder-outline" right={<Badge label={`${reports.length} reports`} />} />
           <View>
             {loading ? (
               <View style={{ alignItems: 'center', padding: 30 }}>
-                <ActivityIndicator color={Colors.primary} />
+                <ActivityIndicator color={colors.teal} />
               </View>
             ) : reports.length === 0 ? (
-              <View style={{ alignItems: 'center', padding: 30 }}>
-                <Text style={{ fontSize: 40, marginBottom: 8 }}>📁</Text>
-                <Text style={{ color: Colors.gray500 }}>No reports uploaded yet</Text>
+              <View style={{ alignItems: 'center', padding: 32 }}>
+                <IconBox icon="folder-open-outline" color={colors.textFaint} bg={colors.tealSoft} size={64} />
+                <Text style={{ fontWeight: '700', fontSize: 15, color: colors.textMuted, marginTop: 14 }}>No reports uploaded yet</Text>
+                <Text style={{ fontSize: 13, color: colors.textFaint, marginTop: 6 }}>Upload your first medical report above</Text>
               </View>
             ) : (
               reports.map((r, i) => (
-                <View key={r._id} style={[styles.reportItem, i < reports.length - 1 && styles.reportBorder]}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <View style={styles.reportIconBox}>
-                        <Text style={{ fontSize: 22 }}>{getReportIcon(r.reportType)}</Text>
-                      </View>
+                <View key={r._id} style={[rp.reportItem, i < reports.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                      <IconBox icon={getReportIcon(r.reportType)} color={colors.teal} bg={colors.tealSoft} size={46} />
                       <View>
-                        <Text style={{ fontWeight: '700', fontSize: 13, color: Colors.gray800 }}>{r.reportType}</Text>
-                        <Text style={{ fontSize: 11, color: Colors.gray400 }}>
-                          {formatDate(r.createdAt)} · {formatFileSize(r.size)}
+                        <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textPrimary }}>{r.reportType}</Text>
+                        <Text style={{ fontSize: 12, color: colors.textFaint, marginTop: 3 }}>
+                          {formatDate(r.createdAt)} - {formatFileSize(r.size)}
                         </Text>
-                        <Text style={{ fontSize: 10, color: Colors.gray400 }} numberOfLines={1}>
+                        <Text style={{ fontSize: 11, color: colors.textFaint }} numberOfLines={1}>
                           {r.originalName}
                         </Text>
                       </View>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <TouchableOpacity onPress={() => handleDeleteReport(r._id)}>
-                        <Text style={{ fontSize: 16, color: Colors.danger }}>🗑️</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <TouchableOpacity onPress={() => handleDeleteReport(r._id)} activeOpacity={0.7}>
+                        <Ionicons name="trash-outline" size={20} color={colors.danger} />
                       </TouchableOpacity>
-                      <Button label="View →" onPress={() => handleViewReport(r)} size="sm" />
+                      <Button label="View" onPress={() => handleViewReport(r)} size="sm" />
                     </View>
                   </View>
                   {r.aiSummary && (
-                    <View style={styles.aiBox}>
-                      <Text style={styles.aiLabel}>🤖 AI SUMMARY</Text>
-                      <Text style={styles.aiText}>{r.aiSummary}</Text>
+                    <View style={[rp.aiBox, { backgroundColor: colors.bgPage, borderLeftColor: colors.teal }]}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <Ionicons name="bulb-outline" size={16} color={colors.teal} />
+                        <Text style={[rp.aiLabel, { color: colors.teal }]}>AI SUMMARY</Text>
+                      </View>
+                      <Text style={[rp.aiText, { color: colors.textMuted }]}>{r.aiSummary}</Text>
                     </View>
                   )}
                 </View>
@@ -306,28 +319,29 @@ export default function ReportsScreen() {
           </View>
         </Card>
       </ScrollView>
-    </DrawerLayout>
+    </BottomNavLayout>
   );
 }
 
-const styles = StyleSheet.create({
-  label: { fontSize: 12, fontWeight: '600', color: Colors.gray700, marginBottom: 8 },
-  typeChip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.white, marginRight: 8 },
-  typeChipActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySoft },
-  typeChipText: { fontSize: 12, fontWeight: '600', color: Colors.gray600 },
-  dropZone: { borderWidth: 2, borderColor: Colors.border, borderStyle: 'dashed', borderRadius: 12, padding: 24, alignItems: 'center', backgroundColor: Colors.gray50, marginBottom: 14 },
-  dropText: { fontSize: 14, fontWeight: '600', color: Colors.gray700 },
-  dropSub: { fontSize: 11, color: Colors.gray400, marginTop: 4 },
-  quickRow: { flexDirection: 'row', gap: 10, marginBottom: 4 },
-  quickBtn: { flex: 1, padding: 10, borderRadius: 10, alignItems: 'center', gap: 4 },
-  quickBtnText: { fontSize: 11, fontWeight: '600', color: Colors.gray700 },
-  successBox: { marginTop: 12, padding: 14, backgroundColor: Colors.successSoft, borderRadius: 10, borderWidth: 1, borderColor: '#BBF7D0' },
-  successTitle: { fontSize: 13, fontWeight: '700', color: Colors.success, marginBottom: 4 },
-  successBody: { fontSize: 12, color: Colors.success, fontWeight: '500' },
-  reportItem: { padding: 16 },
-  reportBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
-  reportIconBox: { width: 44, height: 44, backgroundColor: Colors.gray100, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  aiBox: { backgroundColor: Colors.gray50, borderRadius: 8, padding: 10, borderLeftWidth: 3, borderLeftColor: Colors.primary },
-  aiLabel: { fontSize: 10, fontWeight: '700', color: Colors.primary, marginBottom: 4 },
-  aiText: { fontSize: 12, color: Colors.gray600, lineHeight: 18 },
+const rp = StyleSheet.create({
+  label: { fontSize: 12, fontWeight: '600', marginBottom: 10 },
+  typeChip: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 22, borderWidth: 1.5, marginRight: 10 },
+  typeChipActive: {},
+  typeChipText: { fontSize: 12, fontWeight: '600' },
+  dropZone: { borderWidth: 2, borderStyle: 'dashed', borderRadius: 20, padding: 28, alignItems: 'center', marginBottom: 16 },
+  dropText: { fontSize: 15, fontWeight: '600' },
+  dropSub: { fontSize: 12, marginTop: 6 },
+  removeBtn: { marginTop: 12, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 14 },
+  quickRow: { flexDirection: 'row', gap: 12, marginBottom: 6 },
+  quickBtn: { flex: 1, padding: 12, borderRadius: 16, alignItems: 'center', gap: 6 },
+  quickBtnText: { fontSize: 11, fontWeight: '600' },
+  successBox: { marginTop: 14, padding: 16, borderRadius: 16, borderWidth: 1 },
+  successTitle: { fontSize: 14, fontWeight: '700' },
+  successBody: { fontSize: 13, fontWeight: '500' },
+  reportItem: { padding: 18 },
+  reportBorder: {},
+  reportIconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  aiBox: { borderRadius: 14, padding: 14, borderLeftWidth: 3 },
+  aiLabel: { fontSize: 10, fontWeight: '700' },
+  aiText: { fontSize: 12, lineHeight: 20 },
 });

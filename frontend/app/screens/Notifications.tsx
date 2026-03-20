@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, RefreshControl } from 'react-native';
-import DrawerLayout from '../../components/DrawerLayout';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import BottomNavLayout from '../../components/BottomNavLayout';
 import { useTheme } from '../../context/ThemeContext';
 import { useBadges } from '../../context/BadgeContext';
-import { Badge, Button } from '../../components/UI';
+import { Badge, Button, IconBox } from '../../components/UI';
 import { notificationAPI, Notification } from '../../services/api';
 
 const TAG_COLORS: Record<string, 'danger'|'warning'|'primary'|'success'|'teal'|'default'> = {
@@ -13,7 +15,8 @@ const TAG_COLORS: Record<string, 'danger'|'warning'|'primary'|'success'|'teal'|'
 };
 
 export default function NotificationsScreen() {
-  const { colors, isDark, role, userName, userInitial } = useTheme();
+  const router = useRouter();
+  const { colors, isDark, role } = useTheme();
   const {
     clearNotifs,
     doctorNotifs, patientNotifs,
@@ -82,19 +85,37 @@ export default function NotificationsScreen() {
     return n.type === filter;
   });
 
+  const getNotifIcon = (type: string): keyof typeof Ionicons.glyphMap => {
+    if (type === 'dose_missed') return 'medical-outline';
+    if (type === 'symptom_urgent') return 'alert-circle-outline';
+    return 'notifications-outline';
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(role === 'doctor' ? '/screens/DoctorDashboard' : '/screens/PatientDashboard');
+    }
+  };
+
+  const headerRight = unread > 0 ? (
+    <Button 
+      label="Mark all" 
+      onPress={handleMarkAllAsRead} 
+      size="sm"
+      style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} 
+    />
+  ) : undefined;
+
   return (
-    <DrawerLayout
+    <BottomNavLayout
       title="Notifications"
       subtitle={unread > 0 ? `${unread} unread` : 'All caught up!'}
       role={role}
-      userName={userName}
-      userInitial={userInitial}
-      headerRight={
-        unread > 0
-          ? <Button label="Mark all" onPress={handleMarkAllAsRead} size="sm"
-              style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} />
-          : undefined
-      }
+      headerRight={headerRight}
+      showBack
+      onBack={handleBack}
     >
       <View style={{ flex: 1, backgroundColor: colors.bgPage }}>
 
@@ -105,7 +126,7 @@ export default function NotificationsScreen() {
             : (isDark ? '#052e2e' : '#F0FDFA'),
           borderColor: accent + '40',
         }]}>
-          <Text style={{ fontSize: 22 }}>{isDoctor ? '👨‍⚕️' : '🧑'}</Text>
+          <Ionicons name={isDoctor ? 'medkit' : 'person'} size={26} color={accent} />
           <View style={{ flex: 1 }}>
             <Text style={[s.bannerTitle, { color: accent }]}>
               {isDoctor ? 'Doctor Notifications' : 'Patient Notifications'}
@@ -128,7 +149,7 @@ export default function NotificationsScreen() {
             {filters.map(f => {
               const active = filter === f;
               return (
-                <TouchableOpacity key={f} onPress={() => setFilter(f)}
+                <TouchableOpacity key={f} onPress={() => setFilter(f)} activeOpacity={0.7}
                   style={[s.filterBtn, {
                     backgroundColor: active ? accent : colors.bgPage,
                     borderColor: active ? accent : colors.border,
@@ -157,13 +178,13 @@ export default function NotificationsScreen() {
             </View>
           ) : displayed.length === 0 ? (
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
-              <Text style={{ fontSize: 50 }}>🎉</Text>
+              <Ionicons name="checkmark-circle" size={56} color={colors.success} />
               <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 12 }}>All caught up!</Text>
               <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>No notifications here.</Text>
             </View>
           ) : (
             displayed.map(n => {
-              const typeIcon = n.type === 'dose_missed' ? '💊' : n.type === 'symptom_urgent' ? '🚨' : '🔔';
+              const typeIcon = getNotifIcon(n.type);
               const typeTag = n.type === 'dose_missed' ? 'Medicine' : n.type === 'symptom_urgent' ? 'Critical' : 'System';
               return (
                 <View key={n._id} style={[s.card, {
@@ -180,7 +201,7 @@ export default function NotificationsScreen() {
                     backgroundColor: n.isRead ? colors.bgCardHover : accent + '18',
                     borderColor: n.isRead ? colors.border : accent + '40',
                   }]}>
-                    <Text style={{ fontSize: 20 }}>{typeIcon}</Text>
+                    <Ionicons name={typeIcon} size={22} color={n.isRead ? colors.textMuted : accent} />
                   </View>
 
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -193,19 +214,22 @@ export default function NotificationsScreen() {
                     </View>
                     <Text style={[s.notifBody, { color: n.isRead ? colors.textFaint : colors.textMuted }]}
                       numberOfLines={2}>{n.message}</Text>
-                    <Text style={[s.notifTime, { color: colors.textFaint }]}>🕐 {new Date(n.createdAt).toLocaleDateString()}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                      <Ionicons name="time-outline" size={11} color={colors.textFaint} />
+                      <Text style={[s.notifTime, { color: colors.textFaint }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
+                    </View>
                   </View>
 
                   <View style={{ gap: 6, flexShrink: 0 }}>
                     {!n.isRead && (
                       <TouchableOpacity onPress={() => handleMarkAsRead(n._id)}
                         style={[s.actionBtn, { backgroundColor: colors.successSoft, borderColor: colors.success + '40' }]}>
-                        <Text style={{ color: colors.success, fontSize: 14, fontWeight: '800' }}>✓</Text>
+                        <Ionicons name="checkmark" size={16} color={colors.success} />
                       </TouchableOpacity>
                     )}
                     <TouchableOpacity onPress={() => removeNotif(role, n._id)}
                       style={[s.actionBtn, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-                      <Text style={{ color: colors.textFaint, fontSize: 13 }}>✕</Text>
+                      <Ionicons name="close" size={14} color={colors.textFaint} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -214,24 +238,24 @@ export default function NotificationsScreen() {
           )}
         </ScrollView>
       </View>
-    </DrawerLayout>
+    </BottomNavLayout>
   );
 }
 
 const s = StyleSheet.create({
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, margin: 14, padding: 14, borderRadius: 14, borderWidth: 1 },
-  bannerTitle: { fontSize: 14, fontWeight: '800' },
-  bannerSub:   { fontSize: 11, marginTop: 2 },
-  unreadBubble: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  filterWrap: { borderBottomWidth: 1 },
-  filterBtn: { paddingVertical: 7, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  filterTxt: { fontSize: 12, fontWeight: '600' },
-  filterCount: { minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
-  card: { borderRadius: 16, padding: 14, flexDirection: 'row', gap: 10, alignItems: 'flex-start', borderWidth: 1, borderLeftWidth: 4, shadowColor: '#000', shadowRadius: 6, elevation: 2, shadowOffset: { width: 0, height: 2 } },
-  dot: { width: 8, height: 8, borderRadius: 4, marginTop: 6, flexShrink: 0 },
-  iconBox: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center', borderWidth: 1, flexShrink: 0 },
-  notifTitle: { fontSize: 13 },
-  notifBody:  { fontSize: 12, lineHeight: 17, marginBottom: 4 },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 14, margin: 14, padding: 16, borderRadius: 16, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  bannerTitle: { fontSize: 15, fontWeight: '800' },
+  bannerSub:   { fontSize: 12, marginTop: 3 },
+  unreadBubble: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 4, elevation: 2 },
+  filterWrap: { borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  filterBtn: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  filterTxt: { fontSize: 13, fontWeight: '600' },
+  filterCount: { minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  card: { borderRadius: 18, padding: 16, flexDirection: 'row', gap: 12, alignItems: 'flex-start', borderWidth: 1, borderLeftWidth: 5, shadowColor: '#000', shadowRadius: 8, elevation: 3, shadowOffset: { width: 0, height: 3 } },
+  dot: { width: 10, height: 10, borderRadius: 5, marginTop: 6, flexShrink: 0 },
+  iconBox: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, flexShrink: 0 },
+  notifTitle: { fontSize: 14, fontWeight: '600' },
+  notifBody:  { fontSize: 13, lineHeight: 19, marginBottom: 5 },
   notifTime:  { fontSize: 11 },
-  actionBtn: { width: 30, height: 30, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  actionBtn: { width: 34, height: 34, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
 });

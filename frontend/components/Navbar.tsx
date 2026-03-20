@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -15,6 +16,8 @@ interface NavbarProps {
   userName?: string;
   /** Show a back arrow instead of the avatar menu */
   showBack?: boolean;
+  /** Active screen for icon highlighting */
+  activeScreen?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -25,6 +28,7 @@ export default function Navbar({
   role     = 'doctor',
   userName = 'DS',
   showBack = false,
+  activeScreen,
 }: NavbarProps) {
   const router = useRouter();
   const { colors, isDark, toggleTheme } = useTheme();
@@ -39,6 +43,8 @@ export default function Navbar({
 
   const avatarBg = role === 'doctor' ? colors.primary : colors.teal;
 
+  const isActive = (screen: string) => activeScreen === screen;
+
   return (
     <View style={[styles.navbar, { backgroundColor: colors.bgNavbar, borderBottomColor: colors.border }]}>
       <StatusBar
@@ -49,8 +55,8 @@ export default function Navbar({
       {/* ── Left: back OR title ──────────────────── */}
       <View style={styles.left}>
         {showBack ? (
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={[styles.backArrow, { color: colors.primary }]}>←</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={22} color={colors.primary} />
           </TouchableOpacity>
         ) : null}
         <View>
@@ -72,11 +78,22 @@ export default function Navbar({
 
         {/* Notification bell */}
         <TouchableOpacity
-          style={[styles.iconBtn, { backgroundColor: colors.bgCard, borderColor: colors.border }]}
+          style={[
+            styles.iconBtn,
+            {
+              backgroundColor: isActive('notifications') ? colors.primarySoft : colors.bgCard,
+              borderColor: isActive('notifications') ? colors.primary : colors.border,
+            },
+          ]}
           onPress={() => router.push('/screens/Notifications')}
           accessibilityLabel="Notifications"
+          activeOpacity={0.7}
         >
-          <Text style={{ fontSize: 14 }}>🔔</Text>
+          <Ionicons
+            name="notifications-outline"
+            size={18}
+            color={isActive('notifications') ? colors.primary : colors.textMuted}
+          />
           {/* Red dot */}
           <View style={[styles.notifDot, { backgroundColor: colors.danger, borderColor: colors.bgNavbar }]} />
         </TouchableOpacity>
@@ -95,8 +112,8 @@ export default function Navbar({
           activeOpacity={0.8}
         >
           {/* Track icons */}
-          <Text style={[styles.themeIcon, { opacity: isDark ? 0.35 : 1 }]}>☀️</Text>
-          <Text style={[styles.themeIcon, { opacity: isDark ? 1 : 0.35 }]}>🌙</Text>
+          <Ionicons name="sunny" size={12} color={colors.warning} style={{ opacity: isDark ? 0.35 : 1 }} />
+          <Ionicons name="moon" size={12} color={colors.primary} style={{ opacity: isDark ? 1 : 0.35 }} />
           {/* Sliding thumb */}
           <View
             style={[
@@ -114,6 +131,7 @@ export default function Navbar({
           onPress={() => router.push('/screens/Profile')}
           style={[styles.avatar, { backgroundColor: avatarBg }]}
           accessibilityLabel={`${userName} (${role})`}
+          activeOpacity={0.7}
         >
           <Text style={styles.avatarText}>{initials}</Text>
         </TouchableOpacity>
@@ -131,7 +149,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    // elevation / shadow
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowOffset: { width: 0, height: 2 },
@@ -193,7 +210,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
 
-  // Theme toggle pill (mirrors .theme-toggle CSS)
   themeToggle: {
     width: 56,
     height: 28,

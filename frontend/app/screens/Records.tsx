@@ -4,10 +4,10 @@ import {
   Modal, TextInput, Alert, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import DrawerLayout from '../../components/DrawerLayout';
-import Colors from '../../constants/colors';
-import { StatCard, Card, CardHeader, Badge, Button } from '../../components/UI';
+import BottomNavLayout from '../../components/BottomNavLayout';
+import { StatCard, Card, CardHeader, Badge, Button, IconBox } from '../../components/UI';
 import { patientAPI, doctorAPI, MedRecord } from '../../services/api';
 
 interface RecordItem {
@@ -18,13 +18,6 @@ interface RecordItem {
 }
 
 const RECORDS: RecordItem[] = [];
-
-const TYPE_STYLE: Record<string, { bg: string; color: string; badge: 'danger' | 'primary' | 'success' | 'warning'; icon: string }> = {
-  Admission: { bg: Colors.dangerSoft,  color: Colors.danger,   badge: 'danger',  icon: '🏥' },
-  OPD:       { bg: Colors.primarySoft, color: Colors.primary,  badge: 'primary', icon: '🩺' },
-  'Check-up':{ bg: Colors.successSoft, color: Colors.success,  badge: 'success', icon: '✅' },
-  Emergency: { bg: Colors.dangerSoft,  color: Colors.danger,   badge: 'danger',  icon: '🚨' },
-};
 
 export default function RecordsScreen() {
   const router = useRouter();
@@ -77,84 +70,99 @@ export default function RecordsScreen() {
 
   const visitTypes: RecordItem['type'][] = ['OPD', 'Admission', 'Check-up', 'Emergency'];
 
+  const getTypeStyle = (type: string) => {
+    const styles: Record<string, { bg: string; color: string; badge: 'danger' | 'primary' | 'success' | 'warning'; icon: keyof typeof Ionicons.glyphMap }> = {
+      Admission: { bg: colors.dangerSoft, color: colors.danger, badge: 'danger', icon: 'business-outline' },
+      OPD: { bg: colors.primarySoft, color: colors.primary, badge: 'primary', icon: 'fitness-outline' },
+      'Check-up': { bg: colors.successSoft, color: colors.success, badge: 'success', icon: 'checkmark-circle-outline' },
+      Emergency: { bg: colors.dangerSoft, color: colors.danger, badge: 'danger', icon: 'alert-circle-outline' },
+    };
+    return styles[type] || styles.OPD;
+  };
+
   return (
-    <DrawerLayout
+    <BottomNavLayout
       title="Medical Records"
       subtitle="Complete health history"
-      showBack
+      role="patient"
       headerRight={
-        <Button label="+ Add" onPress={() => setShowAdd(true)} size="sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-      }>
+        <Button label="+ Add " onPress={() => setShowAdd(true)} size="sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+      }
+    >
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}>
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}>
 
         {/* Stats */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statHalf}>
-            {loading ? <StatCard icon="📋" value="-" label="Total Records" /> : <StatCard icon="📋" value={records.length} label="Total Records" />}
+        <View style={rc.statsGrid}>
+          <View style={rc.statHalf}>
+            {loading ? <StatCard icon="folder-outline" value="-" label="Total Records" /> : <StatCard icon="folder-outline" value={records.length} label="Total Records" />}
           </View>
-          <View style={styles.statHalf}><StatCard icon="🏥" value={0} label="Admissions" iconBg={Colors.dangerSoft} valueColor={Colors.danger} /></View>
-          <View style={styles.statHalf}><StatCard icon="🩺" value={0} label="OPD Visits" iconBg={Colors.tealSoft} valueColor={Colors.teal} /></View>
-          <View style={styles.statHalf}><StatCard icon="✅" value={0} label="Check-ups" iconBg={Colors.successSoft} valueColor={Colors.success} /></View>
+          <View style={rc.statHalf}><StatCard icon="business-outline" value={0} label="Admissions" iconBg={colors.dangerSoft} valueColor={colors.danger} /></View>
+          <View style={rc.statHalf}><StatCard icon="fitness-outline" value={0} label="OPD Visits" iconBg={colors.tealSoft} valueColor={colors.teal} /></View>
+          <View style={rc.statHalf}><StatCard icon="checkmark-circle-outline" value={0} label="Check-ups" iconBg={colors.successSoft} valueColor={colors.success} /></View>
         </View>
 
         {/* Records */}
         {loading ? (
           <View style={{ alignItems: 'center', padding: 40 }}>
-            <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={{ fontSize: 13, color: Colors.gray500, marginTop: 10 }}>Loading records...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>Loading records...</Text>
           </View>
         ) : records.length === 0 ? (
-          <View style={{ alignItems: 'center', padding: 40 }}>
-            <Text style={{ fontSize: 40, marginBottom: 10 }}>📋</Text>
-            <Text style={{ fontWeight: '600', fontSize: 15, color: Colors.gray700 }}>No records found</Text>
-            <Text style={{ fontSize: 12, color: Colors.gray500, marginTop: 4 }}>Your medical records will appear here</Text>
-          </View>
+          <Card variant="elevated" glowColor={colors.primary}>
+            <View style={{ alignItems: 'center', padding: 32 }}>
+              <IconBox icon="folder-open-outline" color={colors.textFaint} bg={colors.primarySoft} size={64} />
+              <Text style={{ fontWeight: '700', fontSize: 16, color: colors.textMuted, marginTop: 14 }}>No records found</Text>
+              <Text style={{ fontSize: 13, color: colors.textFaint, marginTop: 6, textAlign: 'center' }}>Your medical records will appear here</Text>
+            </View>
+          </Card>
         ) : (
           records.map(record => {
             const recordType = 'Check-up';
-            const ts = TYPE_STYLE[recordType] || TYPE_STYLE.OPD;
+            const ts = getTypeStyle(recordType);
             const open = expanded === record._id;
             return (
-              <View key={record._id} style={[styles.recordCard, { borderLeftColor: ts.color }]}>
+              <Card key={record._id} variant="elevated" glowColor={ts.color}>
               {/* Header - tap to expand */}
               <TouchableOpacity onPress={() => setExpanded(open ? null : record._id)} style={{ padding: 16 }} activeOpacity={0.7}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={[styles.recordIcon, { backgroundColor: ts.bg }]}>
-                    <Text style={{ fontSize: 20 }}>{ts.icon}</Text>
-                  </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <IconBox icon={ts.icon} color={ts.color} bg={ts.bg} size={44} />
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <Text style={{ fontWeight: '800', fontSize: 14, color: Colors.gray800 }}>{record.diagnosis}</Text>
+                      <Text style={{ fontWeight: '700', fontSize: 15, color: colors.textPrimary }}>{record.diagnosis}</Text>
                       <Badge label={recordType} type={ts.badge} />
                     </View>
-                    <Text style={{ fontSize: 11, color: Colors.gray500, marginTop: 3 }}>
-                      📅 {record.date ? new Date(record.date).toLocaleDateString() : 'N/A'} · 👨‍⚕️ {record.doctorId || 'N/A'}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 }}>
+                      <Ionicons name="calendar-outline" size={12} color={colors.textFaint} />
+                      <Text style={{ fontSize: 12, color: colors.textFaint }}>{record.date ? new Date(record.date).toLocaleDateString() : 'N/A'}</Text>
+                      <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: colors.textFaint }} />
+                      <Ionicons name="person-outline" size={12} color={colors.textFaint} />
+                      <Text style={{ fontSize: 12, color: colors.textFaint }}>{record.doctorId || 'N/A'}</Text>
+                    </View>
                   </View>
-                  <Text style={{ color: Colors.gray400, fontSize: 14 }}>{open ? '▲' : '▼'}</Text>
+                  <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textFaint} />
                 </View>
               </TouchableOpacity>
 
               {/* Expanded body */}
               {open && (
-                <View style={{ borderTopWidth: 1, borderTopColor: Colors.gray100, padding: 16 }}>
+                <View style={{ borderTopWidth: 1, borderTopColor: colors.borderSoft, padding: 16, marginTop: 4 }}>
                   {record.notes ? (
                     <View style={{ marginBottom: 16 }}>
-                      <Text style={styles.sectionLabel}>DOCTOR'S NOTES</Text>
-                      <View style={{ backgroundColor: Colors.gray50, borderRadius: 8, padding: 12 }}>
-                        <Text style={{ fontSize: 13, color: Colors.gray700, lineHeight: 20 }}>{record.notes}</Text>
+                      <Text style={[rc.sectionLabel, { color: colors.textFaint }]}>DOCTOR'S NOTES</Text>
+                      <View style={{ backgroundColor: colors.bgPage, borderRadius: 12, padding: 14 }}>
+                        <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 21 }}>{record.notes}</Text>
                       </View>
                     </View>
                   ) : null}
 
                   {record.medicines && record.medicines.length > 0 && (
                     <View style={{ marginBottom: 16 }}>
-                      <Text style={styles.sectionLabel}>PRESCRIBED MEDICINES</Text>
+                      <Text style={[rc.sectionLabel, { color: colors.textFaint }]}>PRESCRIBED MEDICINES</Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                         {record.medicines.map((m, i) => (
-                          <Badge key={i} label={`💊 ${m}`} style={{ marginBottom: 4 }} />
+                          <Badge key={i} label={m} />
                         ))}
                       </View>
                     </View>
@@ -162,13 +170,16 @@ export default function RecordsScreen() {
 
                   {record.fileUrls && record.fileUrls.length > 0 && (
                     <View>
-                      <Text style={styles.sectionLabel}>ATTACHED FILES</Text>
+                      <Text style={[rc.sectionLabel, { color: colors.textFaint }]}>ATTACHED FILES</Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                         {record.fileUrls.map((f, i) => (
-                          <TouchableOpacity key={i} style={styles.fileBtn} onPress={() => Alert.alert('View', `Opening file`)}>
-                            <Text style={{ fontSize: 18 }}>📄</Text>
-                            <Text style={{ fontSize: 12, fontWeight: '600', color: Colors.gray700 }}>Report {i + 1}</Text>
-                            <Text style={{ fontSize: 11, color: Colors.primary }}>View →</Text>
+                          <TouchableOpacity key={i} style={[rc.fileBtn, { backgroundColor: colors.bgPage, borderColor: colors.border }]} onPress={() => Alert.alert('View', `Opening file`)} activeOpacity={0.7}>
+                            <Ionicons name="document-text-outline" size={18} color={ts.color} />
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>Report {i + 1}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                              <Text style={{ fontSize: 11, color: ts.color }}>View</Text>
+                              <Ionicons name="chevron-forward" size={11} color={ts.color} />
+                            </View>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -176,7 +187,7 @@ export default function RecordsScreen() {
                   )}
                 </View>
               )}
-            </View>
+            </Card>
           );
           })
         )}
@@ -184,22 +195,30 @@ export default function RecordsScreen() {
 
       {/* Add Record Modal */}
       <Modal visible={showAdd} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>📋 Add Medical Record</Text>
-              <TouchableOpacity onPress={() => setShowAdd(false)}>
-                <Text style={{ fontSize: 18, color: Colors.gray500 }}>✕</Text>
+        <View style={rc.modalOverlay}>
+          <View style={[rc.modalCard, { backgroundColor: colors.bgCard, shadowColor: colors.primary, shadowOpacity: 0.15, borderColor: colors.primarySoft }]}>
+            <View style={[rc.modalHeader, { borderBottomColor: colors.borderSoft }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <IconBox icon="add-circle-outline" color={colors.primary} bg={colors.primarySoft} size={36} />
+                <Text style={[rc.modalTitle, { color: colors.textPrimary }]}>Add Medical Record</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowAdd(false)} activeOpacity={0.7} style={{ padding: 2 }}>
+                <Ionicons name="close-circle" size={26} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
-            <ScrollView contentContainerStyle={{ padding: 16 }}>
-              <Text style={styles.label}>Visit Type</Text>
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-                {visitTypes.map(t => (
-                  <TouchableOpacity key={t} onPress={() => setForm(p => ({ ...p, type: t }))} style={[styles.typeChip, form.type === t && styles.typeChipActive]}>
-                    <Text style={[{ fontSize: 12, fontWeight: '600', color: Colors.gray600 }, form.type === t && { color: Colors.primary }]}>{t}</Text>
-                  </TouchableOpacity>
-                ))}
+            <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
+              <Text style={[rc.label, { color: colors.textMuted }]}>Visit Type</Text>
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+                {visitTypes.map(t => {
+                  const isActive = form.type === t;
+                  const ts = getTypeStyle(t);
+                  return (
+                    <TouchableOpacity key={t} onPress={() => setForm(p => ({ ...p, type: t }))} activeOpacity={0.7}
+                      style={[rc.typeChip, { borderColor: isActive ? ts.color : colors.border, backgroundColor: isActive ? ts.bg : colors.bgPage }]}>
+                      <Text style={[{ fontSize: 12, fontWeight: '600', color: isActive ? ts.color : colors.textMuted }]}>{t}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
               {[
                 { label: 'Doctor Name', key: 'doctor', placeholder: 'Dr. Full Name' },
@@ -207,50 +226,50 @@ export default function RecordsScreen() {
                 { label: 'Diagnosis', key: 'diagnosis', placeholder: 'Primary diagnosis' },
               ].map(f => (
                 <View key={f.key} style={{ marginBottom: 14 }}>
-                  <Text style={styles.label}>{f.label}</Text>
+                  <Text style={[rc.label, { color: colors.textMuted }]}>{f.label}</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[rc.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
                     placeholder={f.placeholder}
                     value={(form as any)[f.key]}
                     onChangeText={v => setForm(p => ({ ...p, [f.key]: v }))}
-                    placeholderTextColor={Colors.gray400}
+                    placeholderTextColor={colors.textFaint}
                   />
                 </View>
               ))}
-              <Text style={styles.label}>Doctor's Notes</Text>
+              <Text style={[rc.label, { color: colors.textMuted }]}>Doctor's Notes</Text>
               <TextInput
-                style={[styles.input, { height: 80, textAlignVertical: 'top', marginBottom: 14 }]}
+                style={[rc.input, { height: 80, textAlignVertical: 'top', backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
                 placeholder="Notes, instructions, observations…"
                 value={form.notes}
                 onChangeText={v => setForm(p => ({ ...p, notes: v }))}
                 multiline
-                placeholderTextColor={Colors.gray400}
+                placeholderTextColor={colors.textFaint}
               />
-              <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
                 <Button label="Cancel" onPress={() => setShowAdd(false)} variant="outline" style={{ flex: 1 }} />
-                <Button label="Save Record" onPress={addRecord} style={{ flex: 1 }} />
+                <Button label="Save Record" onPress={addRecord} style={{ flex: 1.2 }} />
               </View>
             </ScrollView>
           </View>
         </View>
       </Modal>
-    </DrawerLayout>
+    </BottomNavLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const rc = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   statHalf: { width: '48%' },
-  recordCard: { backgroundColor: Colors.white, borderRadius: 14, overflow: 'hidden', marginBottom: 12, borderLeftWidth: 4, borderWidth: 1, borderColor: Colors.border, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  recordCard: { borderRadius: 20, overflow: 'hidden', marginBottom: 14, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.08, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12, elevation: 4 },
   recordIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  sectionLabel: { fontSize: 10, fontWeight: '700', color: Colors.gray500, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  fileBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: Colors.gray50, borderWidth: 1, borderColor: Colors.gray200, borderRadius: 8 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
-  modalTitle: { fontSize: 15, fontWeight: '700', color: Colors.gray800 },
-  label: { fontSize: 12, fontWeight: '600', color: Colors.gray700, marginBottom: 6 },
-  input: { backgroundColor: Colors.gray50, borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 14, fontSize: 14, color: Colors.gray900 },
-  typeChip: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.white },
-  typeChipActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySoft },
+  sectionLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  fileBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, borderRadius: 12 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  modalCard: { borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '88%', borderWidth: 1, shadowOffset: { width: 0, height: -6 }, shadowRadius: 24, elevation: 10 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 18, borderBottomWidth: 1 },
+  modalTitle: { fontSize: 17, fontWeight: '700' },
+  label: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  input: { borderWidth: 1.5, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16, fontSize: 14 },
+  typeChip: { paddingVertical: 9, paddingHorizontal: 16, borderRadius: 22, borderWidth: 1.5 },
+  typeChipActive: {},
 });

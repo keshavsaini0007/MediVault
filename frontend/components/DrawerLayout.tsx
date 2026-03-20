@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   Modal, StatusBar, Animated, Dimensions, Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Sidebar from './Sidebar';
@@ -99,13 +100,13 @@ export default function DrawerLayout({
           {/* Theme toggle */}
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <TouchableOpacity style={[s.iconBtn, { borderColor: accent + '55' }]} onPress={handleTheme} activeOpacity={0.8}>
-              <Text style={{ fontSize: 18 }}>{isDark ? '☀️' : '🌙'}</Text>
+              <Ionicons name={isDark ? 'sunny' : 'moon'} size={18} color="white" />
             </TouchableOpacity>
           </Animated.View>
           {/* Bell */}
           <TouchableOpacity style={[s.iconBtn, { borderColor: accent + '55' }]}
             onPress={() => router.push('/screens/Notifications' as any)} activeOpacity={0.75}>
-            <Text style={{ fontSize: 18 }}>🔔</Text>
+            <Ionicons name="notifications-outline" size={18} color="white" />
             <View style={[s.dot, { backgroundColor: '#FF4444', borderColor: barBg }]} />
           </TouchableOpacity>
           {/* Avatar */}
