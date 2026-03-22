@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { StatCard, Card, CardHeader, Badge, Button, ProgressBar, IconBox } from '../../components/UI';
 import { medicineAPI, Medicine } from '../../services/api';
@@ -31,6 +32,7 @@ interface DueDose {
 
 export default function MedicinesScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,7 +74,7 @@ export default function MedicinesScreen() {
       setWeeklyTrend(weeklyRes.trend);
       setAdherence(adherenceRes.map(a => ({ medicineId: a.medicineId, adherencePercent: a.adherencePercent })));
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch medicines';
+      const message = err instanceof Error ? err.message : t('med.error.fetchFailed');
       setError(message);
     } finally {
       setLoading(false);
@@ -95,11 +97,11 @@ export default function MedicinesScreen() {
 
   const handleAddMedicine = async () => {
     if (!newMed.name.trim()) {
-      Alert.alert('Required', 'Please enter medicine name');
+      Alert.alert(t('med.alert.requiredTitle'), t('med.alert.enterMedicineName'));
       return;
     }
     if (!newMed.dosage.trim()) {
-      Alert.alert('Required', 'Please enter dosage');
+      Alert.alert(t('med.alert.requiredTitle'), t('med.alert.enterDosage'));
       return;
     }
 
@@ -115,9 +117,9 @@ export default function MedicinesScreen() {
       setShowAdd(false);
       setNewMed({ name: '', dosage: '', frequency: 'daily', timeSlots: ['09:00'], instructions: '' });
       await fetchData();
-      Alert.alert('Success', 'Medicine added successfully');
+      Alert.alert(t('med.alert.successTitle'), t('med.alert.added'));
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to add medicine');
+      Alert.alert(t('med.alert.errorTitle'), err instanceof Error ? err.message : t('med.error.addFailed'));
     }
   };
 
@@ -133,7 +135,7 @@ export default function MedicinesScreen() {
       );
       fetchData();
     } catch (err) {
-      Alert.alert('Error', 'Failed to mark dose');
+      Alert.alert(t('med.alert.errorTitle'), t('med.error.markDoseFailed'));
     }
   };
 
@@ -169,10 +171,10 @@ export default function MedicinesScreen() {
 
   return (
     <BottomNavLayout
-      title="Medicines"
-      subtitle="Track your medications"
+      title={t('med.title')}
+      subtitle={t('med.subtitle')}
       role="patient"
-      headerRight={<Button label="+ Add" onPress={() => setShowAdd(true)} size="sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />}
+      headerRight={<Button label={t('common.add')} onPress={() => setShowAdd(true)} size="sm" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />}
     >
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
@@ -180,30 +182,30 @@ export default function MedicinesScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
         {loading ? (
-          <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 40 }}>Loading...</Text>
+          <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 40 }}>{t('common.loading')}</Text>
         ) : error ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
             <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text>
-            <Button label="Retry" onPress={() => fetchData()} variant="outline" />
+            <Button label={t('common.retry')} onPress={() => fetchData()} variant="outline" />
           </View>
         ) : (
           <>
             {/* Stats */}
             <View style={md.statsGrid}>
-              <View style={md.statHalf}><StatCard icon="medical-outline" value={String(stats.active)} label="Active Medicines" /></View>
-              <View style={md.statHalf}><StatCard icon="checkmark-circle-outline" value={`${stats.taken}`} label="Taken Today" iconBg={colors.successSoft} valueColor={colors.success} iconColor={colors.success} /></View>
-              <View style={md.statHalf}><StatCard icon="time-outline" value={`${stats.pending}`} label="Pending" iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} /></View>
-              <View style={md.statHalf}><StatCard icon="stats-chart-outline" value={`${stats.avgAdherence}%`} label="Avg Adherence" iconBg={colors.primarySoft} valueColor={colors.primary} iconColor={colors.primary} /></View>
+              <View style={md.statHalf}><StatCard icon="medical-outline" value={String(stats.active)} label={t('med.stats.active')} /></View>
+              <View style={md.statHalf}><StatCard icon="checkmark-circle-outline" value={`${stats.taken}`} label={t('med.stats.takenToday')} iconBg={colors.successSoft} valueColor={colors.success} iconColor={colors.success} /></View>
+              <View style={md.statHalf}><StatCard icon="time-outline" value={`${stats.pending}`} label={t('med.stats.pending')} iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} /></View>
+              <View style={md.statHalf}><StatCard icon="stats-chart-outline" value={`${stats.avgAdherence}%`} label={t('med.stats.avgAdherence')} iconBg={colors.primarySoft} valueColor={colors.primary} iconColor={colors.primary} /></View>
             </View>
 
             {/* Today's Schedule */}
             <Card variant="elevated" glowColor={colors.teal}>
-              <CardHeader title="Today's Schedule" icon="time-outline" />
+              <CardHeader title={t('med.section.todaySchedule')} icon="time-outline" />
               <View style={{ padding: 16 }}>
                 {dueDoses.length === 0 ? (
                   <View style={{ alignItems: 'center', paddingVertical: 20 }}>
                     <IconBox icon="medical-outline" color={colors.textFaint} bg={colors.tealSoft} size={56} />
-                    <Text style={{ color: colors.textMuted, marginTop: 12 }}>No medications scheduled</Text>
+                    <Text style={{ color: colors.textMuted, marginTop: 12 }}>{t('med.empty.noScheduled')}</Text>
                   </View>
                 ) : (
                   dueDoses.map((dose, i) => {
@@ -222,10 +224,10 @@ export default function MedicinesScreen() {
                           <Text style={[md.doseDosage, { color: colors.textMuted }]}>{dose.slot} · {dose.dosage}</Text>
                         </View>
                         {dose.status === 'taken' ? (
-                          <Badge label="Taken" type="success" icon="checkmark-circle" />
+                          <Badge label={t('med.badge.taken')} type="success" icon="checkmark-circle" />
                         ) : (
                           <Button 
-                            label={dose.status === 'missed' ? 'Retake' : 'Take'} 
+                            label={dose.status === 'missed' ? t('med.action.retake') : t('med.action.take')} 
                             onPress={() => handleMarkTaken(dose)} 
                             size="sm" 
                             icon={dose.status === 'missed' ? 'refresh' : 'checkmark'}
@@ -242,9 +244,9 @@ export default function MedicinesScreen() {
             {/* Weekly Adherence */}
             <Card variant="elevated" glowColor={colors.teal}>
               <CardHeader 
-                title="Weekly Adherence" 
+                title={t('med.section.weeklyAdherence')} 
                 icon="analytics-outline"
-                right={<Badge label={`${stats.avgAdherence}% avg`} type={stats.avgAdherence >= 80 ? 'success' : 'warning'} />} 
+                right={<Badge label={`${stats.avgAdherence}% ${t('med.avg')}`} type={stats.avgAdherence >= 80 ? 'success' : 'warning'} />} 
               />
               <View style={{ padding: 16 }}>
                 <View style={md.weeklyBars}>
@@ -267,13 +269,13 @@ export default function MedicinesScreen() {
 
             {/* Medicines List */}
             <Card variant="elevated" glowColor={colors.teal}>
-              <CardHeader title="My Medicines" icon="medical-outline" />
+              <CardHeader title={t('med.section.myMeds')} icon="medical-outline" />
               <View style={{ padding: 16 }}>
                 {medicines.length === 0 ? (
                   <View style={{ alignItems: 'center', paddingVertical: 20 }}>
                     <IconBox icon="medical-outline" color={colors.textFaint} bg={colors.tealSoft} size={56} />
-                    <Text style={{ color: colors.textMuted, marginTop: 12 }}>No medicines added yet</Text>
-                    <Button label="Add Medicine" onPress={() => setShowAdd(true)} size="sm" style={{ marginTop: 12 }} />
+                    <Text style={{ color: colors.textMuted, marginTop: 12 }}>{t('med.empty.noMeds')}</Text>
+                    <Button label={t('med.action.addMedicine')} onPress={() => setShowAdd(true)} size="sm" style={{ marginTop: 12 }} />
                   </View>
                 ) : (
                   medicines.map((med, i) => {
@@ -288,11 +290,11 @@ export default function MedicinesScreen() {
                             <Badge label={med.dosage} size="sm" />
                           </View>
                           <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                            {med.frequency} · {med.timeSlots?.join(', ') || 'No schedule'}
+                            {med.frequency} · {med.timeSlots?.join(', ') || t('med.noSchedule')}
                           </Text>
                           {med.startDate && (
                             <Text style={{ fontSize: 11, color: colors.textFaint, marginTop: 3 }}>
-                              Started: {formatDate(med.startDate)}
+                              {t('med.started')}: {formatDate(med.startDate)}
                               {med.endDate ? ` - ${formatDate(med.endDate)}` : ''}
                             </Text>
                           )}
@@ -320,7 +322,7 @@ export default function MedicinesScreen() {
             <View style={[md.modalHeader, { borderBottomColor: colors.borderSoft }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <IconBox icon="medical" color={colors.teal} bg={colors.tealSoft} size={36} />
-                <Text style={[md.modalTitle, { color: colors.textPrimary }]}>Add New Medicine</Text>
+                <Text style={[md.modalTitle, { color: colors.textPrimary }]}>{t('med.modal.addNew')}</Text>
               </View>
               <TouchableOpacity onPress={() => setShowAdd(false)} activeOpacity={0.7} style={md.closeBtn}>
                 <Ionicons name="close-circle" size={26} color={colors.textMuted} />
@@ -328,25 +330,25 @@ export default function MedicinesScreen() {
             </View>
             <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
               <View style={{ padding: 20 }}>
-                <Text style={[md.label, { color: colors.textMuted }]}>Medicine Name *</Text>
+                <Text style={[md.label, { color: colors.textMuted }]}>{t('med.field.name')} *</Text>
                 <TextInput
                   style={[md.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-                  placeholder="e.g. Paracetamol"
+                  placeholder={t('med.placeholder.name')}
                   value={newMed.name}
                   onChangeText={(text) => setNewMed(prev => ({ ...prev, name: text }))}
                   placeholderTextColor={colors.textFaint}
                 />
 
-                <Text style={[md.label, { color: colors.textMuted }]}>Dosage *</Text>
+                <Text style={[md.label, { color: colors.textMuted }]}>{t('med.field.dosage')} *</Text>
                 <TextInput
                   style={[md.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-                  placeholder="e.g. 500mg"
+                  placeholder={t('med.placeholder.dosage')}
                   value={newMed.dosage}
                   onChangeText={(text) => setNewMed(prev => ({ ...prev, dosage: text }))}
                   placeholderTextColor={colors.textFaint}
                 />
 
-                <Text style={[md.label, { color: colors.textMuted }]}>Frequency</Text>
+                <Text style={[md.label, { color: colors.textMuted }]}>{t('med.field.frequency')}</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                   {['daily', 'twice daily', 'thrice daily', 'weekly', 'as needed'].map(freq => (
                     <TouchableOpacity
@@ -360,16 +362,16 @@ export default function MedicinesScreen() {
                   ))}
                 </View>
 
-                <Text style={[md.label, { color: colors.textMuted }]}>Time Slots</Text>
+                <Text style={[md.label, { color: colors.textMuted }]}>{t('med.field.timeSlots')}</Text>
                 <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
                   <TextInput
                     style={[md.input, { flex: 1, backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-                    placeholder="HH:MM"
+                    placeholder={t('med.placeholder.time')}
                     value={newTimeSlot}
                     onChangeText={setNewTimeSlot}
                     placeholderTextColor={colors.textFaint}
                   />
-                  <Button label="Add" onPress={addTimeSlot} size="sm" />
+                  <Button label={t('common.add')} onPress={addTimeSlot} size="sm" />
                 </View>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                   {newMed.timeSlots.map(slot => (
@@ -388,10 +390,10 @@ export default function MedicinesScreen() {
                   ))}
                 </View>
 
-                <Text style={[md.label, { color: colors.textMuted }]}>Instructions (optional)</Text>
+                <Text style={[md.label, { color: colors.textMuted }]}>{t('med.field.instructions')}</Text>
                 <TextInput
                   style={[md.input, { height: 64, textAlignVertical: 'top', backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-                  placeholder="e.g. Take after food"
+                  placeholder={t('med.placeholder.instructions')}
                   value={newMed.instructions}
                   onChangeText={(text) => setNewMed(prev => ({ ...prev, instructions: text }))}
                   multiline
@@ -399,8 +401,8 @@ export default function MedicinesScreen() {
                 />
 
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
-                  <Button label="Cancel" onPress={() => setShowAdd(false)} variant="outline" style={{ flex: 1 }} />
-                  <Button label="Add Medicine" onPress={handleAddMedicine} glow={false} style={{ flex: 1.2 }} />
+                  <Button label={t('common.cancel')} onPress={() => setShowAdd(false)} variant="outline" style={{ flex: 1 }} />
+                  <Button label={t('med.action.addMedicine')} onPress={handleAddMedicine} glow={false} style={{ flex: 1.2 }} />
                 </View>
               </View>
             </ScrollView>

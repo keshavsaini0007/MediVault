@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIn
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import Svg, { Rect } from 'react-native-svg';
 import { Card, CardHeader, Badge, Button, IconBox } from '../../components/UI';
@@ -31,6 +32,7 @@ function QRCodeSVG({ primary }: { primary: string }) {
 export default function QRProfileScreen() {
   const router = useRouter();
   const { role, userName, userInitial, colors } = useTheme();
+  const { t } = useLanguage();
   const [qrToken, setQrToken] = useState<string>('');
   const [patientName, setPatientName] = useState<string>('');
   const [bloodType, setBloodType] = useState<string>('');
@@ -44,10 +46,10 @@ export default function QRProfileScreen() {
       const data = await qrAPI.getMyProfile();
       setQrToken(data.qrToken);
       setPatientName(data.payload.name);
-      setBloodType(data.payload.bloodType || 'Unknown');
+      setBloodType(data.payload.bloodType || t('qr.unknown'));
       setAllergies(data.payload.allergies || []);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load QR profile');
+      Alert.alert(t('common.error'), error.message || t('qr.error.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -64,10 +66,10 @@ export default function QRProfileScreen() {
   }, []);
 
   const emergency: Array<{ label: string; value: string; icon: keyof typeof Ionicons.glyphMap; highlight: boolean }> = [
-    { label: 'Blood Type', value: bloodType || 'Unknown', icon: 'water-outline', highlight: false },
-    { label: 'Allergies', value: allergies.length > 0 ? allergies.join(', ') : 'None', icon: 'warning-outline', highlight: allergies.length > 0 },
-    { label: 'Condition', value: 'N/A', icon: 'business-outline', highlight: false },
-    { label: 'Emergency Contact', value: emergencyContact ? `${emergencyContact.name} (${emergencyContact.phone || 'N/A'})` : 'Not set', icon: 'call-outline', highlight: false },
+    { label: t('qr.bloodType'), value: bloodType || t('qr.unknown'), icon: 'water-outline', highlight: false },
+    { label: t('register.field.allergies'), value: allergies.length > 0 ? allergies.join(', ') : t('qr.none'), icon: 'warning-outline', highlight: allergies.length > 0 },
+    { label: t('qr.condition'), value: t('records.na'), icon: 'business-outline', highlight: false },
+    { label: t('qr.emergencyContact'), value: emergencyContact ? `${emergencyContact.name} (${emergencyContact.phone || t('records.na')})` : t('qr.notSet'), icon: 'call-outline', highlight: false },
   ];
 
   const handleBack = () => {
@@ -80,8 +82,8 @@ export default function QRProfileScreen() {
 
   return (
     <BottomNavLayout 
-      title="Emergency QR Profile" 
-      subtitle="Your emergency health card" 
+      title={t('qr.title')} 
+      subtitle={t('qr.subtitle')} 
       role="patient"
       showBack
       onBack={handleBack}
@@ -94,13 +96,13 @@ export default function QRProfileScreen() {
         <View style={[qr.warningBanner, { backgroundColor: colors.warningSoft, borderColor: colors.warning }]}>
           <IconBox icon="warning-outline" color={colors.warning} bg={colors.warning} size={36} />
           <Text style={{ fontSize: 13, color: colors.warning, flex: 1, lineHeight: 20, marginLeft: 6 }}>
-            This QR code can be scanned by emergency responders or doctors <Text style={{ fontWeight: '700' }}>without requiring a login</Text>. Keep it accessible.
+            {t('qr.warningPrefix')} <Text style={{ fontWeight: '700' }}>{t('qr.warningBold')}</Text>. {t('qr.warningSuffix')}
           </Text>
         </View>
 
         {/* QR Card */}
         <Card glowColor={colors.primary}>
-          <CardHeader title="Your Emergency QR Code" icon="qr-code-outline" />
+          <CardHeader title={t('qr.section.code')} icon="qr-code-outline" />
           <View style={{ padding: 24, alignItems: 'center' }}>
             {loading ? (
               <ActivityIndicator size="large" color={colors.primary} />
@@ -112,8 +114,8 @@ export default function QRProfileScreen() {
                 <Text style={[qr.patientName, { color: colors.textPrimary }]}>{patientName}</Text>
                 <Text style={[qr.tokenText, { color: colors.textFaint }]}>ID: {qrToken.substring(0, 16)}...</Text>
                 <View style={{ flexDirection: 'row', gap: 14, marginTop: 10 }}>
-                  <Button label="Download" onPress={() => Alert.alert('Download', 'QR saved to gallery.')} />
-                  <Button label="Copy Link" onPress={() => Alert.alert('Copied', 'Link copied to clipboard.')} variant="outline" />
+                  <Button label={t('qr.download')} onPress={() => Alert.alert(t('qr.download'), t('qr.savedToGallery'))} />
+                  <Button label={t('qr.copyLink')} onPress={() => Alert.alert(t('qr.copied'), t('qr.linkCopied'))} variant="outline" />
                 </View>
               </>
             )}
@@ -125,9 +127,9 @@ export default function QRProfileScreen() {
           <View style={[qr.dangerHeader, { backgroundColor: colors.danger }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Ionicons name="alert-circle" size={22} color="white" />
-              <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>Emergency Information</Text>
+              <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>{t('qr.section.emergencyInfo')}</Text>
             </View>
-            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>No login required</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>{t('qr.noLoginRequired')}</Text>
           </View>
           <View style={{ padding: 18 }}>
             {emergency.map((info, i) => (
@@ -144,17 +146,17 @@ export default function QRProfileScreen() {
 
         {/* Current Medications */}
         <Card glowColor={colors.teal} style={{ marginTop: 14 }}>
-          <CardHeader title="Current Medications" icon="medical-outline" />
+          <CardHeader title={t('qr.section.currentMeds')} icon="medical-outline" />
           <View style={{ paddingHorizontal: 18, paddingBottom: 18, alignItems: 'center' }}>
             <Text style={[qr.medPlaceholder, { color: colors.textMuted }]}>
-              View medications in the Records section
+              {t('qr.viewMedsInRecords')}
             </Text>
           </View>
         </Card>
 
         {/* Update Form */}
         <Card glowColor={colors.teal} style={{ marginTop: 14 }}>
-          <CardHeader title="Update Emergency Information" icon="create-outline" />
+          <CardHeader title={t('qr.section.updateInfo')} icon="create-outline" />
           <View style={{ padding: 18 }}>
             {[
               { label: 'Blood Type', value: 'O+' },
@@ -168,7 +170,7 @@ export default function QRProfileScreen() {
                 </View>
               </View>
             ))}
-            <Button label="Save Emergency Profile" onPress={() => Alert.alert('Saved', 'Emergency profile updated.')} style={{ width: '100%', marginTop: 6 }} />
+            <Button label={t('qr.saveProfile')} onPress={() => Alert.alert(t('med.alert.successTitle'), t('qr.profileUpdated'))} style={{ width: '100%', marginTop: 6 }} />
           </View>
         </Card>
 

@@ -8,12 +8,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, ProgressBar, ColorIcon } from '../../components/UI';
 import { authAPI } from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Role = 'patient' | 'doctor';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { setUser, colors } = useTheme();
+  const { t } = useLanguage();
   const [role, setRole] = useState<Role>('patient');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -37,9 +39,9 @@ export default function RegisterScreen() {
   }, [step, role]);
 
   const steps = [
-    { n: 1, label: 'Choose role' },
-    { n: 2, label: 'Personal info' },
-    { n: 3, label: 'Health profile' },
+    { n: 1, label: t('register.step.chooseRole') },
+    { n: 2, label: t('register.step.personalInfo') },
+    { n: 3, label: t('register.step.healthProfile') },
   ];
 
   const handleNextFromStep2 = () => {
@@ -49,11 +51,11 @@ export default function RegisterScreen() {
     const trimmedHospitalId = hospitalId?.trim() || '';
     
     if (!trimmedFirstName || !trimmedLastName || !trimmedEmail) {
-      Alert.alert('Missing Fields', 'Please fill in First Name, Last Name, and Email to continue.');
+      Alert.alert(t('register.alert.missingFieldsTitle'), t('register.alert.missingFieldsBody'));
       return;
     }
     if (role === 'doctor' && !trimmedHospitalId) {
-      Alert.alert('Missing Fields', 'Hospital ID is required for doctor registration.');
+      Alert.alert(t('register.alert.missingFieldsTitle'), t('register.alert.hospitalIdRequired'));
       return;
     }
     setValidationErrors([]);
@@ -62,19 +64,19 @@ export default function RegisterScreen() {
 
   const handleSubmit = async () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert(t('register.alert.errorTitle'), t('register.alert.fillRequired'));
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(t('register.alert.errorTitle'), t('register.alert.passwordMismatch'));
       return;
     }
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+      Alert.alert(t('register.alert.errorTitle'), t('register.alert.passwordMin'));
       return;
     }
     if (role === 'doctor' && !hospitalId.trim()) {
-      Alert.alert('Error', 'Hospital ID is required for doctors');
+      Alert.alert(t('register.alert.errorTitle'), t('register.alert.hospitalIdDoctor'));
       return;
     }
 
@@ -136,11 +138,11 @@ export default function RegisterScreen() {
               <Ionicons name="chevron-back" size={20} color="white" />
             </TouchableOpacity>
             <View style={rg.headerText}>
-              <Text style={rg.headerTitle}>Create Account</Text>
-              <Text style={rg.headerSubtitle}>Join MediVault today</Text>
+              <Text style={rg.headerTitle}>{t('register.button.create')}</Text>
+              <Text style={rg.headerSubtitle}>{t('register.header.subtitle')}</Text>
             </View>
             <View style={[rg.stepIndicator, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={rg.stepIndicatorText}>Step {step}/3</Text>
+              <Text style={rg.stepIndicatorText}>{t('register.header.step')} {step}/3</Text>
             </View>
           </View>
           <View style={rg.headerCurve} />
@@ -178,11 +180,11 @@ export default function RegisterScreen() {
         {/* STEP 1: Role */}
         {step === 1 && (
           <View style={rg.cardForm}>
-            <Text style={[rg.cardTitle, { color: colors.textPrimary }]}>Choose your role</Text>
+            <Text style={[rg.cardTitle, { color: colors.textPrimary }]}>{t('register.step.chooseRole')}</Text>
             <View style={rg.roleGrid}>
               {([
-                { r: 'patient' as Role, iconName: 'person' as keyof typeof Ionicons.glyphMap, label: 'Patient', desc: 'Track health & records', color: colors.teal, bg: colors.tealSoft },
-                { r: 'doctor' as Role, iconName: 'medkit' as keyof typeof Ionicons.glyphMap, label: 'Doctor', desc: 'Manage patients', color: colors.primary, bg: colors.primarySoft },
+                { r: 'patient' as Role, iconName: 'person' as keyof typeof Ionicons.glyphMap, label: t('common.patient'), desc: t('register.role.patientDesc'), color: colors.teal, bg: colors.tealSoft },
+                { r: 'doctor' as Role, iconName: 'medkit' as keyof typeof Ionicons.glyphMap, label: t('common.doctor'), desc: t('register.role.doctorDesc'), color: colors.primary, bg: colors.primarySoft },
               ]).map(({ r, iconName, label, desc, color, bg }) => (
                 <TouchableOpacity key={r} onPress={() => setRole(r)} activeOpacity={0.7}
                   style={[
@@ -200,39 +202,39 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <Button label={`Continue as ${role === 'doctor' ? 'Doctor' : 'Patient'}`} onPress={() => setStep(2)} size="lg" style={{ marginTop: 8 }} />
+            <Button label={t('register.button.continueAs', { role: role === 'doctor' ? t('common.doctor') : t('common.patient') })} onPress={() => setStep(2)} size="lg" style={{ marginTop: 8 }} />
           </View>
         )}
 
         {/* STEP 2: Personal info */}
         {step === 2 && (
           <View style={[rg.cardForm, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-            <Text style={[rg.cardTitle, { color: colors.textPrimary }]}>Personal information</Text>
+            <Text style={[rg.cardTitle, { color: colors.textPrimary }]}>{t('register.card.personalInfo')}</Text>
             <View style={rg.row}>
               <View style={[rg.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={[rg.label, { color: colors.textMuted }]}>First Name</Text>
+                <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.firstName')}</Text>
                 <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="Rahul" value={firstName} onChangeText={setFirstName} placeholderTextColor={colors.textFaint} />
               </View>
               <View style={[rg.inputGroup, { flex: 1 }]}>
-                <Text style={[rg.label, { color: colors.textMuted }]}>Last Name</Text>
+                <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.lastName')}</Text>
                 <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="Singh" value={lastName} onChangeText={setLastName} placeholderTextColor={colors.textFaint} />
               </View>
             </View>
             <View style={rg.inputGroup}>
-              <Text style={[rg.label, { color: colors.textMuted }]}>Username</Text>
+              <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.username')}</Text>
               <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="rahul_singh" value={username} onChangeText={setUsername} autoCapitalize="none" placeholderTextColor={colors.textFaint} />
             </View>
             <View style={rg.inputGroup}>
-              <Text style={[rg.label, { color: colors.textMuted }]}>Email Address</Text>
+              <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.email')}</Text>
               <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="you@example.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholderTextColor={colors.textFaint} />
             </View>
             <View style={rg.inputGroup}>
-              <Text style={[rg.label, { color: colors.textMuted }]}>Mobile Number</Text>
+              <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.mobile')}</Text>
               <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="+91 98765 43210" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholderTextColor={colors.textFaint} />
             </View>
             {role === 'doctor' && (
               <View style={rg.inputGroup}>
-                <Text style={[rg.label, { color: colors.textMuted }]}>Hospital ID</Text>
+                <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.hospitalId')}</Text>
                 <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="HOSP-2024-001" value={hospitalId} onChangeText={setHospitalId} autoCapitalize="none" placeholderTextColor={colors.textFaint} />
               </View>
             )}
@@ -245,8 +247,8 @@ export default function RegisterScreen() {
               </View>
             )}
             <View style={rg.navRow}>
-              <Button label="Back" onPress={() => { setValidationErrors([]); setStep(1); }} variant="outline" style={{ flex: 1, marginRight: 8 }} />
-              <Button label="Continue" onPress={handleNextFromStep2} style={{ flex: 2 }} />
+              <Button label={t('register.button.back')} onPress={() => { setValidationErrors([]); setStep(1); }} variant="outline" style={{ flex: 1, marginRight: 8 }} />
+              <Button label={t('register.button.continue')} onPress={handleNextFromStep2} style={{ flex: 2 }} />
             </View>
           </View>
         )}
@@ -255,12 +257,12 @@ export default function RegisterScreen() {
         {step === 3 && (
           <View style={rg.cardForm}>
             <Text style={[rg.cardTitle, { color: colors.textPrimary }]}>
-              {role === 'patient' ? 'Health Profile' : 'Professional Details'}
+              {role === 'patient' ? t('register.card.healthProfile') : t('register.card.professionalDetails')}
             </Text>
             {role === 'patient' && (
               <View style={rg.row}>
                 <View style={[rg.inputGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={[rg.label, { color: colors.textMuted }]}>Blood Type</Text>
+                  <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.bloodType')}</Text>
                   <View style={rg.selectWrap}>
                     {bloodTypes.map(b => (
                       <TouchableOpacity key={b} onPress={() => setBloodType(b)} activeOpacity={0.7}
@@ -275,14 +277,14 @@ export default function RegisterScreen() {
                   </View>
                 </View>
                 <View style={[rg.inputGroup, { flex: 1 }]}>
-                  <Text style={[rg.label, { color: colors.textMuted }]}>Allergies</Text>
+                  <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.allergies')}</Text>
                   <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="e.g. Penicillin" value={allergies} onChangeText={setAllergies} placeholderTextColor={colors.textFaint} />
                 </View>
               </View>
             )}
             {role === 'doctor' && (
               <View style={rg.inputGroup}>
-                <Text style={[rg.label, { color: colors.textMuted }]}>Specialisation</Text>
+                <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.specialisation')}</Text>
                 <View style={rg.selectWrap}>
                   {specialisations.map(s => (
                     <TouchableOpacity key={s} onPress={() => setSpec(s)} activeOpacity={0.7}
@@ -298,37 +300,37 @@ export default function RegisterScreen() {
               </View>
             )}
             <View style={rg.inputGroup}>
-              <Text style={[rg.label, { color: colors.textMuted }]}>Password</Text>
+              <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.password')}</Text>
               <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="Min. 8 characters" value={password} onChangeText={setPassword} secureTextEntry placeholderTextColor={colors.textFaint} />
             </View>
             <View style={rg.inputGroup}>
-              <Text style={[rg.label, { color: colors.textMuted }]}>Confirm Password</Text>
+              <Text style={[rg.label, { color: colors.textMuted }]}>{t('register.field.confirmPassword')}</Text>
               <TextInput style={[rg.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="Repeat password" value={confirm} onChangeText={setConfirm} secureTextEntry placeholderTextColor={colors.textFaint} />
               {confirm && password !== confirm && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
                   <Ionicons name="warning" size={12} color={colors.danger} />
-                  <Text style={{ fontSize: 11, color: colors.danger }}>Passwords do not match</Text>
+                  <Text style={{ fontSize: 11, color: colors.danger }}>{t('register.alert.passwordMismatch')}</Text>
                 </View>
               )}
             </View>
             {/* Summary */}
             <View style={[rg.summaryBox, { backgroundColor: colors.primarySoft, borderColor: colors.primary }]}>
-              <Text style={[rg.summaryTitle, { color: colors.primary }]}>Account Summary</Text>
-              <Text style={[rg.summaryRow, { color: colors.textMuted }]}>Name: <Text style={[rg.summaryVal, { color: colors.textPrimary }]}>{firstName} {lastName}</Text></Text>
-              <Text style={[rg.summaryRow, { color: colors.textMuted }]}>Role: <Text style={[rg.summaryVal, { color: colors.primary }]}>{role === 'doctor' ? 'Doctor' : 'Patient'}</Text></Text>
-              {role === 'doctor' && hospitalId ? <Text style={[rg.summaryRow, { color: colors.textMuted }]}>Hospital ID: <Text style={[rg.summaryVal, { color: colors.textPrimary }]}>{hospitalId}</Text></Text> : null}
-              {role === 'doctor' ? <Text style={[rg.summaryRow, { color: colors.textMuted }]}>Specialisation: <Text style={[rg.summaryVal, { color: colors.textPrimary }]}>{spec}</Text></Text> : null}
+              <Text style={[rg.summaryTitle, { color: colors.primary }]}>{t('register.summary.title')}</Text>
+              <Text style={[rg.summaryRow, { color: colors.textMuted }]}>{t('register.summary.name')}: <Text style={[rg.summaryVal, { color: colors.textPrimary }]}>{firstName} {lastName}</Text></Text>
+              <Text style={[rg.summaryRow, { color: colors.textMuted }]}>{t('register.summary.role')}: <Text style={[rg.summaryVal, { color: colors.primary }]}>{role === 'doctor' ? t('common.doctor') : t('common.patient')}</Text></Text>
+              {role === 'doctor' && hospitalId ? <Text style={[rg.summaryRow, { color: colors.textMuted }]}>{t('register.field.hospitalId')}: <Text style={[rg.summaryVal, { color: colors.textPrimary }]}>{hospitalId}</Text></Text> : null}
+              {role === 'doctor' ? <Text style={[rg.summaryRow, { color: colors.textMuted }]}>{t('register.field.specialisation')}: <Text style={[rg.summaryVal, { color: colors.textPrimary }]}>{spec}</Text></Text> : null}
             </View>
             <View style={rg.navRow}>
-              <Button label="Back" onPress={() => setStep(2)} variant="outline" style={{ flex: 1, marginRight: 8 }} />
-              <Button label={loading ? 'Creating account...' : 'Create Account'} onPress={handleSubmit} disabled={loading || (!!confirm && password !== confirm)} style={{ flex: 2 }} />
+              <Button label={t('register.button.back')} onPress={() => setStep(2)} variant="outline" style={{ flex: 1, marginRight: 8 }} />
+              <Button label={loading ? t('register.button.creating') : t('register.button.create')} onPress={handleSubmit} disabled={loading || (!!confirm && password !== confirm)} style={{ flex: 2 }} />
             </View>
           </View>
         )}
 
         <TouchableOpacity onPress={() => router.push('/screens/LoginScreen')} style={{ marginTop: 24, alignItems: 'center' }} activeOpacity={0.7}>
           <Text style={{ fontSize: 13, color: colors.textMuted }}>
-            Already have an account? <Text style={{ color: colors.primary, fontWeight: '600' }}>Sign in</Text>
+            {t('register.login.prompt')} <Text style={{ color: colors.primary, fontWeight: '600' }}>{t('register.login.cta')}</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>

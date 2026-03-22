@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useBadges } from '../../context/BadgeContext';
 import { Badge, Button, IconBox } from '../../components/UI';
 import { notificationAPI, Notification } from '../../services/api';
@@ -17,6 +18,7 @@ const TAG_COLORS: Record<string, 'danger'|'warning'|'primary'|'success'|'teal'|'
 export default function NotificationsScreen() {
   const router = useRouter();
   const { colors, isDark, role } = useTheme();
+  const { t } = useLanguage();
   const {
     clearNotifs,
     doctorNotifs, patientNotifs,
@@ -26,14 +28,14 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = React.useState('All');
+  const [filter, setFilter] = React.useState('all');
 
   const loadNotifications = async () => {
     try {
       const data = await notificationAPI.getNotifications();
       setNotifications(data.notifications);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load notifications');
+      Alert.alert(t('common.error'), error.message || t('notif.error.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -56,7 +58,7 @@ export default function NotificationsScreen() {
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
       markOneNotif(role, id);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to mark as read');
+      Alert.alert(t('common.error'), error.message || t('notif.error.markOne'));
     }
   };
 
@@ -66,7 +68,7 @@ export default function NotificationsScreen() {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       markAllNotifs(role);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to mark all as read');
+      Alert.alert(t('common.error'), error.message || t('notif.error.markAll'));
     }
   };
 
@@ -76,13 +78,21 @@ export default function NotificationsScreen() {
   const unread   = notifications.filter(n => !n.isRead).length;
 
   const filters = isDoctor
-    ? ['All', 'Unread', 'Critical', 'Report']
-    : ['All', 'Unread', 'Medicine', 'Message'];
+    ? ['all', 'unread', 'critical', 'report']
+    : ['all', 'unread', 'medicine', 'message'];
+
+  const getFilterType = (n: Notification) => {
+    if (n.type === 'dose_missed' || n.type === 'Medicine') return 'medicine';
+    if (n.type === 'symptom_urgent' || n.type === 'Critical') return 'critical';
+    if (n.type === 'Report') return 'report';
+    if (n.type === 'Message') return 'message';
+    return 'all';
+  };
 
   const displayed = notifications.filter(n => {
-    if (filter === 'All')    return true;
-    if (filter === 'Unread') return !n.isRead;
-    return n.type === filter;
+    if (filter === 'all')    return true;
+    if (filter === 'unread') return !n.isRead;
+    return getFilterType(n) === filter;
   });
 
   const getNotifIcon = (type: string): keyof typeof Ionicons.glyphMap => {
@@ -101,7 +111,7 @@ export default function NotificationsScreen() {
 
   const headerRight = unread > 0 ? (
     <Button 
-      label="Mark all" 
+      label={t('notif.markAll')}
       onPress={handleMarkAllAsRead} 
       size="sm"
       style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} 
@@ -110,8 +120,8 @@ export default function NotificationsScreen() {
 
   return (
     <BottomNavLayout
-      title="Notifications"
-      subtitle={unread > 0 ? `${unread} unread` : 'All caught up!'}
+      title={t('notif.title')}
+      subtitle={unread > 0 ? `${unread} ${t('notif.unread')}` : t('notif.allCaughtUp')}
       role={role}
       headerRight={headerRight}
       showBack
@@ -129,10 +139,10 @@ export default function NotificationsScreen() {
           <Ionicons name={isDoctor ? 'medkit' : 'person'} size={26} color={accent} />
           <View style={{ flex: 1 }}>
             <Text style={[s.bannerTitle, { color: accent }]}>
-              {isDoctor ? 'Doctor Notifications' : 'Patient Notifications'}
+              {isDoctor ? t('notif.doctorTitle') : t('notif.patientTitle')}
             </Text>
             <Text style={[s.bannerSub, { color: colors.textMuted }]}>
-              {isDoctor ? 'Patient alerts & system updates' : 'Medications, messages & updates'}
+              {isDoctor ? t('notif.doctorSub') : t('notif.patientSub')}
             </Text>
           </View>
           {unread > 0 && (
@@ -154,8 +164,8 @@ export default function NotificationsScreen() {
                     backgroundColor: active ? accent : colors.bgPage,
                     borderColor: active ? accent : colors.border,
                   }]}>
-                  <Text style={[s.filterTxt, { color: active ? 'white' : colors.textMuted }]}>{f}</Text>
-                  {f === 'Unread' && unread > 0 && (
+                  <Text style={[s.filterTxt, { color: active ? 'white' : colors.textMuted }]}>{t(`notif.filter.${f}`)}</Text>
+                  {f === 'unread' && unread > 0 && (
                     <View style={[s.filterCount, { backgroundColor: active ? 'rgba(255,255,255,0.3)' : '#FF4444' }]}>
                       <Text style={{ fontSize: 9, fontWeight: '900', color: 'white' }}>{unread}</Text>
                     </View>
@@ -174,13 +184,13 @@ export default function NotificationsScreen() {
           {loading ? (
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
               <ActivityIndicator size="large" color={accent} />
-              <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>Loading notifications...</Text>
+              <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>{t('notif.loading')}</Text>
             </View>
           ) : displayed.length === 0 ? (
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
               <Ionicons name="checkmark-circle" size={56} color={colors.success} />
-              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 12 }}>All caught up!</Text>
-              <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>No notifications here.</Text>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 12 }}>{t('notif.allCaughtUp')}</Text>
+              <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>{t('notif.noneHere')}</Text>
             </View>
           ) : (
             displayed.map(n => {

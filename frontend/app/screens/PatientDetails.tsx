@@ -7,6 +7,7 @@ import { ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { Card, CardHeader, Badge, Button, ProgressBar } from '../../components/UI';
 import { doctorAPI, Patient, MedRecord, Report, Medicine } from '../../services/api';
@@ -19,6 +20,7 @@ const REPORTS: any[] = [];
 export default function PatientDetailsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const params = useLocalSearchParams<{ id?: string }>();
   const patientId = params.id;
 
@@ -46,7 +48,7 @@ export default function PatientDetailsScreen() {
       setReports(reportsData.reports);
       setMedicines(medicinesData);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load patient data');
+      Alert.alert(t('common.error'), error.message || t('patientDetails.error.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -67,10 +69,10 @@ export default function PatientDetailsScreen() {
     : '';
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'medications', label: 'Medications' },
-    { key: 'reports',     label: 'Reports'     },
-    { key: 'symptoms',    label: 'Symptoms'    },
-    { key: 'timeline',    label: 'Timeline'    },
+    { key: 'medications', label: t('patient.qa.medicines') },
+    { key: 'reports',     label: t('patient.qa.reports') },
+    { key: 'symptoms',    label: t('patient.qa.symptoms') },
+    { key: 'timeline',    label: t('timeline.title') },
   ];
 
   const handleBack = () => {
@@ -83,8 +85,8 @@ export default function PatientDetailsScreen() {
 
   return (
     <BottomNavLayout
-      title="Patient Details"
-      subtitle={patient ? patient.name : 'Loading...'}
+      title={t('patientDetails.title')}
+      subtitle={patient ? patient.name : t('common.loading')}
       role="doctor"
       showBack
       onBack={handleBack}
@@ -94,7 +96,7 @@ export default function PatientDetailsScreen() {
         {loading ? (
           <View style={{ alignItems: 'center', padding: 40 }}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>Loading patient...</Text>
+            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>{t('patientDetails.loadingPatient')}</Text>
           </View>
         ) : (
           <Card style={{ marginBottom: 16 }}>
@@ -106,7 +108,7 @@ export default function PatientDetailsScreen() {
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <Text style={{ fontWeight: '700', fontSize: 16, color: colors.textPrimary }}>
-                      {patient?.name || 'Unknown Patient'}
+                      {patient?.name || t('patientDetails.unknownPatient')}
                     </Text>
                     {patient?.bloodType && <Badge label={patient.bloodType} type="danger" />}
                   </View>
@@ -141,23 +143,23 @@ export default function PatientDetailsScreen() {
         {/* MEDICATIONS TAB */}
         {tab === 'medications' && (
           <Card>
-            <CardHeader title="Medication Adherence" right={<Badge label={`${medicines.length} Active`} type="success" />} />
+            <CardHeader title={t('patientDetails.medicationAdherence')} right={<Badge label={`${medicines.length} ${t('patientDetails.active')}`} type="success" />} />
             <View style={{ padding: 16 }}>
               <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
                 <View style={[s.streakBox, { backgroundColor: colors.successSoft, borderColor: colors.success + '40' }]}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.success, textTransform: 'uppercase' }}>Current Streak</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.success, textTransform: 'uppercase' }}>{t('patientDetails.currentStreak')}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
                     <Text style={{ fontSize: 24, fontWeight: '900', color: colors.success }}>—d</Text>
                     <Ionicons name="flame" size={18} color={colors.success} />
                   </View>
                 </View>
                 <View style={[s.streakBox, { backgroundColor: colors.primarySoft, borderColor: colors.primary + '40' }]}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary, textTransform: 'uppercase' }}>Adherence Rate</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary, textTransform: 'uppercase' }}>{t('patientDetails.adherenceRate')}</Text>
                   <Text style={{ fontSize: 24, fontWeight: '900', color: colors.primary, marginTop: 4 }}>—%</Text>
                 </View>
               </View>
               {medicines.length === 0 ? (
-                <Text style={{ textAlign: 'center', color: colors.textMuted, paddingVertical: 20 }}>No medications found</Text>
+                <Text style={{ textAlign: 'center', color: colors.textMuted, paddingVertical: 20 }}>{t('patientDetails.empty.noMeds')}</Text>
               ) : (
                 medicines.map((med, i) => (
                   <View key={med._id} style={[{ paddingVertical: 12 }, i < medicines.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
@@ -167,9 +169,9 @@ export default function PatientDetailsScreen() {
                         <Text style={{ fontWeight: '600', fontSize: 14, color: colors.textPrimary }}>{med.name}</Text>
                         <Text style={{ fontSize: 11, color: colors.textFaint }}>{med.frequency}</Text>
                       </View>
-                      <Badge label={med.isActive ? 'Active' : 'Inactive'} type={med.isActive ? 'success' : 'danger'} />
+                      <Badge label={med.isActive ? t('patientDetails.active') : t('patientDetails.inactive')} type={med.isActive ? 'success' : 'danger'} />
                     </View>
-                    <Text style={{ fontSize: 12, color: colors.textMuted }}>{med.dosage} - {med.instructions || 'No instructions'}</Text>
+                    <Text style={{ fontSize: 12, color: colors.textMuted }}>{med.dosage} - {med.instructions || t('patientDetails.noInstructions')}</Text>
                   </View>
                 ))
               )}
@@ -180,10 +182,10 @@ export default function PatientDetailsScreen() {
         {/* REPORTS TAB */}
         {tab === 'reports' && (
           <Card>
-            <CardHeader title="Latest Reports" />
+            <CardHeader title={t('patientDetails.latestReports')} />
             <View style={{ padding: 16 }}>
               {reports.length === 0 ? (
-                <Text style={{ textAlign: 'center', color: colors.textMuted, paddingVertical: 20 }}>No reports found</Text>
+                <Text style={{ textAlign: 'center', color: colors.textMuted, paddingVertical: 20 }}>{t('patientDetails.empty.noReports')}</Text>
               ) : (
                 reports.map((r, i) => (
                   <View key={r._id} style={[{ paddingBottom: 14 }, i < reports.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft, marginBottom: 14 }]}>
@@ -192,7 +194,7 @@ export default function PatientDetailsScreen() {
                         <Ionicons name="document-text-outline" size={24} color={colors.primary} />
                         <View>
                           <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textPrimary }}>{r.originalName}</Text>
-                          <Text style={{ fontSize: 11, color: colors.textFaint }}>Uploaded {new Date(r.createdAt).toLocaleDateString()}</Text>
+                          <Text style={{ fontSize: 11, color: colors.textFaint }}>{t('patientDetails.uploadedOn')} {new Date(r.createdAt).toLocaleDateString()}</Text>
                         </View>
                       </View>
                       <Badge label={r.reportType} type="primary" />
@@ -201,7 +203,7 @@ export default function PatientDetailsScreen() {
                       <View style={[s.aiBox, { backgroundColor: colors.bgPage, borderLeftColor: colors.primary }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                           <Ionicons name="bulb-outline" size={12} color={colors.primary} />
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>AI Summary</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>{t('reports.aiSummary')}</Text>
                         </View>
                         <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 18 }}>{r.aiSummary}</Text>
                       </View>
@@ -216,7 +218,7 @@ export default function PatientDetailsScreen() {
         {/* SYMPTOMS TAB */}
         {tab === 'symptoms' && (
           <Card>
-            <CardHeader title="Reported Symptoms" />
+            <CardHeader title={t('patientDetails.reportedSymptoms')} />
             <View style={{ padding: 16 }}>
                   {[
                     { symptom: 'High Fever (104°F)', date: 'Mar 14, 2026', severity: 'High'   },
@@ -243,7 +245,7 @@ export default function PatientDetailsScreen() {
         {/* TIMELINE TAB */}
         {tab === 'timeline' && (
           <Card>
-            <CardHeader title="Health Timeline" />
+            <CardHeader title={t('timeline.title')} />
             <View style={{ padding: 16 }}>
               {[
                 { date: 'Mar 14', event: 'High Fever reported',                                        type: 'symptom',  icon: 'thermometer-outline' as const },
@@ -271,7 +273,7 @@ export default function PatientDetailsScreen() {
 
         {/* Recovery Progress */}
         <Card style={{ marginTop: 0 }}>
-          <CardHeader title="Recovery Progress" />
+          <CardHeader title={t('patientDetails.recoveryProgress')} />
           <View style={{ padding: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 60, gap: 6, marginBottom: 6 }}>
               {[2, 3, 3, 4, 4, 5, 6].map((v, i) => (
@@ -284,7 +286,7 @@ export default function PatientDetailsScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 12, color: colors.textMuted }}>Recovery rate</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: colors.success }}>Improving</Text>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: colors.success }}>{t('patientDetails.improving')}</Text>
                 <Ionicons name="arrow-up" size={14} color={colors.success} />
               </View>
             </View>
@@ -293,20 +295,20 @@ export default function PatientDetailsScreen() {
 
         {/* Patient Info */}
         <Card style={{ marginTop: 0 }}>
-          <CardHeader title="Patient Info" />
+          <CardHeader title={t('patientDetails.patientInfo')} />
           <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
             {[
-              { label: 'Blood Type', value: patient?.bloodType    },
-              { label: 'Phone',      value: patient?.phone || patient?.mobile    },
-              { label: 'Email',      value: patient?.email   },
-              { label: 'Allergies',  value: patient?.allergies?.join(', ') || 'None' },
+              { label: t('qr.bloodType'), value: patient?.bloodType    },
+              { label: t('patientDetails.phone'),      value: patient?.phone || patient?.mobile    },
+              { label: t('register.field.email'),      value: patient?.email   },
+              { label: t('register.field.allergies'),  value: patient?.allergies?.join(', ') || t('qr.none') },
             ].map((info, i, arr) => (
               <View key={info.label} style={[
                 { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
                 i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft },
               ]}>
                 <Text style={{ fontSize: 12, color: colors.textMuted }}>{info.label}</Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, textAlign: 'right', maxWidth: '60%' }}>{info.value ?? '—'}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, textAlign: 'right', maxWidth: '60%' }}>{info.value ?? t('records.na')}</Text>
               </View>
             ))}
           </View>
@@ -314,19 +316,19 @@ export default function PatientDetailsScreen() {
 
         {/* Add Observation */}
         <Card style={{ marginTop: 0 }}>
-          <CardHeader title="Add Observation" />
+          <CardHeader title={t('patientDetails.addObservation')} />
           <View style={{ padding: 16 }}>
             <TextInput
               style={[s.obsInput, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="Enter your observation..."
+              placeholder={t('patientDetails.placeholder.observation')}
               placeholderTextColor={colors.textFaint}
               value={obs}
               onChangeText={setObs}
               multiline
             />
             <Button
-              label="Save Observation"
-              onPress={() => { setObs(''); Alert.alert('Saved', 'Observation recorded.'); }}
+              label={t('patientDetails.saveObservation')}
+              onPress={() => { setObs(''); Alert.alert(t('med.alert.successTitle'), t('patientDetails.observationRecorded')); }}
               style={{ width: '100%', marginTop: 12 }}
             />
           </View>
@@ -340,7 +342,7 @@ export default function PatientDetailsScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="chatbox" size={18} color={colors.primary} />
                 <Text style={[s.modalTitle, { color: colors.textPrimary }]}>
-                  Send SMS to {patient?.name ?? 'Patient'}
+                  {t('patientDetails.sendSmsTo')} {patient?.name ?? t('common.patient')}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setShowSMS(false)}>
@@ -349,21 +351,21 @@ export default function PatientDetailsScreen() {
             </View>
             <View style={{ padding: 16 }}>
               <View style={[{ padding: 10, borderRadius: 8, marginBottom: 14 }, { backgroundColor: colors.primarySoft }]}>
-                <Text style={{ fontSize: 13, color: colors.primary }}>{patient?.phone ?? 'No phone'}</Text>
+                <Text style={{ fontSize: 13, color: colors.primary }}>{patient?.phone ?? t('patientDetails.noPhone')}</Text>
               </View>
               <TextInput
                 style={[s.obsInput, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-                placeholder="Type your message..."
+                placeholder={t('alerts.typeMessage')}
                 placeholderTextColor={colors.textFaint}
                 value={smsMsg}
                 onChangeText={setSmsMsg}
                 multiline
               />
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-                <Button label="Cancel" onPress={() => setShowSMS(false)} variant="outline" style={{ flex: 1 }} />
+                <Button label={t('common.cancel')} onPress={() => setShowSMS(false)} variant="outline" style={{ flex: 1 }} />
                 <Button
-                  label="Send"
-                  onPress={() => { Alert.alert('Sent!', 'SMS sent via Twilio.'); setShowSMS(false); setSmsMsg(''); }}
+                  label={t('alerts.sendSms')}
+                  onPress={() => { Alert.alert(t('patientDetails.sent'), t('patientDetails.smsSent')); setShowSMS(false); setSmsMsg(''); }}
                   style={{ flex: 1 }}
                 />
               </View>

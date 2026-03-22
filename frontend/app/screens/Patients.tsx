@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Activi
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { StatCard, Card, Badge, Button, Avatar } from '../../components/UI';
 import { doctorAPI, Patient } from '../../services/api';
@@ -10,9 +11,10 @@ import { doctorAPI, Patient } from '../../services/api';
 export default function PatientsScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
 
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('All');
+  const [filter, setFilter] = useState('all');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,31 +65,31 @@ export default function PatientsScreen() {
   const stableCount = patients.length;
 
   const getStatusStyle = (status: string) => {
-    if (status === 'Critical') {
+    if (status === 'critical') {
       return { bg: colors.dangerSoft, border: colors.danger, badge: 'danger' as const };
     }
-    if (status === 'Monitor') {
+    if (status === 'monitor') {
       return { bg: colors.warningSoft, border: colors.warning, badge: 'warning' as const };
     }
     return { bg: colors.successSoft, border: colors.success, badge: 'success' as const };
   };
 
   const getFilterStyle = (f: string, isActive: boolean) => {
-    if (f === 'Critical') {
+    if (f === 'critical') {
       return {
         bg: isActive ? colors.danger : colors.bgPage,
         border: colors.danger,
         text: isActive ? 'white' : colors.textMuted,
       };
     }
-    if (f === 'Monitor') {
+    if (f === 'monitor') {
       return {
         bg: isActive ? colors.warning : colors.bgPage,
         border: colors.warning,
         text: isActive ? 'white' : colors.textMuted,
       };
     }
-    if (f === 'Stable') {
+    if (f === 'stable') {
       return {
         bg: isActive ? colors.success : colors.bgPage,
         border: colors.success,
@@ -102,9 +104,9 @@ export default function PatientsScreen() {
   };
 
   return (
-    <BottomNavLayout title="Patients" subtitle={`${patients.length} total patients`} role="doctor"
+    <BottomNavLayout title={t('patients.title')} subtitle={`${patients.length} ${t('patients.totalPatients')}`} role="doctor"
       headerRight={
-        <Button label="+ Add" onPress={() => router.push('/screens/PatientDetails' as any)} size="sm"
+        <Button label={t('common.add')} onPress={() => router.push('/screens/PatientDetails' as any)} size="sm"
           style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
       }>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
@@ -115,7 +117,7 @@ export default function PatientsScreen() {
         {loading ? (
           <View style={pt.loadingState}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>Loading patients...</Text>
+            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>{t('patients.loading')}</Text>
           </View>
         ) : error ? (
           <Text style={{ color: colors.danger, textAlign: 'center', padding: 20 }}>{error}</Text>
@@ -123,10 +125,10 @@ export default function PatientsScreen() {
           <>
             {/* Stats */}
             <View style={pt.statsGrid}>
-              <View style={pt.statHalf}><StatCard icon="people-outline" value={patients.length} label="Total Patients" /></View>
-              <View style={pt.statHalf}><StatCard icon="alert-circle-outline" value={criticalCount} label="Critical" iconBg={colors.dangerSoft} valueColor={colors.danger} iconColor={colors.danger} /></View>
-              <View style={pt.statHalf}><StatCard icon="eye-outline" value={monitorCount} label="Under Monitor" iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} /></View>
-              <View style={pt.statHalf}><StatCard icon="checkmark-circle-outline" value={stableCount} label="Stable" iconBg={colors.successSoft} valueColor={colors.success} iconColor={colors.success} /></View>
+              <View style={pt.statHalf}><StatCard icon="people-outline" value={patients.length} label={t('patients.totalPatients')} /></View>
+              <View style={pt.statHalf}><StatCard icon="alert-circle-outline" value={criticalCount} label={t('patients.critical')} iconBg={colors.dangerSoft} valueColor={colors.danger} iconColor={colors.danger} /></View>
+              <View style={pt.statHalf}><StatCard icon="eye-outline" value={monitorCount} label={t('patients.monitor')} iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} /></View>
+              <View style={pt.statHalf}><StatCard icon="checkmark-circle-outline" value={stableCount} label={t('patients.stable')} iconBg={colors.successSoft} valueColor={colors.success} iconColor={colors.success} /></View>
             </View>
 
             {/* Search + Filter Card */}
@@ -136,7 +138,7 @@ export default function PatientsScreen() {
                 <Ionicons name="search" size={18} color={colors.textFaint} style={{ marginRight: 8 }} />
                 <TextInput
                   style={[pt.searchInput, { color: colors.textPrimary }]}
-                  placeholder="Search by name, condition..."
+                  placeholder={t('patients.searchPlaceholder')}
                   placeholderTextColor={colors.textFaint}
                   value={search}
                   onChangeText={setSearch}
@@ -151,27 +153,27 @@ export default function PatientsScreen() {
               </View>
               {/* Filter pills */}
               <View style={pt.filterRow}>
-                {['All', 'Critical', 'Monitor', 'Stable'].map(f => {
+                {['all', 'critical', 'monitor', 'stable'].map(f => {
                   const isActive = filter === f;
                   const style = getFilterStyle(f, isActive);
                   return (
                     <TouchableOpacity key={f} onPress={() => setFilter(f)} activeOpacity={0.7}
                       style={[pt.filterBtn, { backgroundColor: style.bg, borderColor: style.border }]}>
-                      <Text style={[pt.filterTxt, { color: style.text }]}>{f}</Text>
+                      <Text style={[pt.filterTxt, { color: style.text }]}>{t(`patients.filter.${f}`)}</Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
               {/* Result count */}
               <Text style={{ fontSize: 11, color: colors.textFaint, marginTop: 10 }}>
-                Showing {filtered.length} of {patients.length} patients
+                {t('patients.showing')} {filtered.length} {t('patients.of')} {patients.length} {t('patients.title').toLowerCase()}
               </Text>
             </Card>
 
             {/* Patient Cards */}
             <View style={{ gap: 12 }}>
               {filtered.map(p => {
-                const status = 'Stable';
+                const status = 'stable';
                 const sc = getStatusStyle(status);
                 const initials = p.name ? p.name.split(' ').map((n: string) => n[0]).join('') : '?';
                 return (
@@ -186,16 +188,16 @@ export default function PatientsScreen() {
                             <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>{p.email}</Text>
                           </View>
                         </View>
-                        <Badge label={status} type={sc.badge} />
+                        <Badge label={t('patients.stable')} type={sc.badge} />
                       </View>
 
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                        {p.bloodType && <Badge label={`Blood: ${p.bloodType}`} type="primary" size="sm" />}
-                        {p.allergies && p.allergies.length > 0 && <Badge label={`${p.allergies.length} allergies`} type="warning" size="sm" />}
+                        {p.bloodType && <Badge label={`${t('patients.blood')}: ${p.bloodType}`} type="primary" size="sm" />}
+                        {p.allergies && p.allergies.length > 0 && <Badge label={`${p.allergies.length} ${t('patients.allergies')}`} type="warning" size="sm" />}
                       </View>
 
                       <View style={{ flexDirection: 'row', gap: 10 }}>
-                        <Button label="View Details" onPress={() => viewPatient(p)} style={{ flex: 1 }} size="sm" />
+                        <Button label={t('patients.viewDetails')} onPress={() => viewPatient(p)} style={{ flex: 1 }} size="sm" />
                         <Button label="SMS" onPress={() => { }} variant="outline" size="sm" />
                       </View>
                     </View>
@@ -207,8 +209,8 @@ export default function PatientsScreen() {
             {filtered.length === 0 && (
               <View style={pt.emptyState}>
                 <Ionicons name="search-outline" size={48} color={colors.textFaint} style={{ marginBottom: 12 }} />
-                <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600' }}>No patients found</Text>
-                <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 4 }}>Try a different search term</Text>
+                <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: '600' }}>{t('patients.noPatients')}</Text>
+                <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 4 }}>{t('patients.tryAnotherSearch')}</Text>
               </View>
             )}
           </>

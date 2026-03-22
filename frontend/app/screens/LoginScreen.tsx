@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, ColorIcon } from '../../components/UI';
 import { useTheme } from '../../context/ThemeContext';
+import { supportedLanguages, useLanguage } from '../../context/LanguageContext';
 import { authAPI } from '../../services/api';
 
 type Role = 'patient' | 'doctor';
@@ -15,6 +16,7 @@ type LoginMode = 'email' | 'mobile' | 'username' | 'hospitalId';
 export default function LoginScreen() {
   const router = useRouter();
   const { setUser, colors } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   const [role, setRole] = useState<Role>('patient');
   const [loginMode, setLoginMode] = useState<LoginMode>('email');
@@ -28,16 +30,26 @@ export default function LoginScreen() {
   const modes = role === 'doctor' ? doctorModes : patientModes;
 
   const modeLabel: Record<LoginMode, string> = {
-    email: 'Email', mobile: 'Mobile', username: 'Username', hospitalId: 'Hospital ID',
+    email: t('login.mode.email'),
+    mobile: t('login.mode.mobile'),
+    username: t('login.mode.username'),
+    hospitalId: t('login.mode.hospitalId'),
+  };
+
+  const modeErrors: Record<LoginMode, string> = {
+    email: t('login.error.enterEmail'),
+    mobile: t('login.error.enterMobile'),
+    username: t('login.error.enterUsername'),
+    hospitalId: t('login.error.enterHospitalId'),
   };
 
   const handleSignIn = async () => {
     if (!identifier.trim()) {
-      setError(`Please enter your ${modeLabel[loginMode].toLowerCase()}.`);
+      setError(modeErrors[loginMode]);
       return;
     }
     if (!password) {
-      setError('Please enter your password.');
+      setError(t('login.error.enterPassword'));
       return;
     }
 
@@ -68,9 +80,9 @@ export default function LoginScreen() {
       setUser(result.user.role, result.user.name || `${result.user.firstName || ''} ${result.user.lastName || ''}`.trim());
       router.replace(result.user.role === 'doctor' ? '/screens/DoctorDashboard' : '/screens/PatientDashboard');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      const message = err instanceof Error ? err.message : t('login.error.failedDefault');
       setError(message);
-      Alert.alert('Login Failed', message);
+      Alert.alert(t('login.error.failedTitle'), message);
     } finally {
       setLoading(false);
     }
@@ -78,12 +90,12 @@ export default function LoginScreen() {
 
   const handleDemoAccess = async (demoRole: Role) => {
     Alert.alert(
-      'Demo Mode',
-      'Demo access skips authentication. For full functionality, please create an account or login.',
+      t('login.demo.modeTitle'),
+      t('login.demo.modeBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Continue Demo',
+          text: t('login.demo.continue'),
           onPress: () => {
             setUser(demoRole, demoRole === 'doctor' ? 'Dr. Demo User' : 'Demo Patient');
             router.replace(demoRole === 'doctor' ? '/screens/DoctorDashboard' : '/screens/PatientDashboard');
@@ -104,13 +116,36 @@ export default function LoginScreen() {
             <Ionicons name="medical" size={32} color="white" />
           </View>
           <Text style={ls.brand}>MediVault</Text>
-          <Text style={ls.brandSub}> HEALTH PLATFORM </Text>
+          <Text style={ls.brandSub}> {t('login.brandSub')} </Text>
           <View style={ls.headerCurve} />
         </View>
 
         <View style={[ls.formCard, { paddingTop: 50, backgroundColor: colors.bgCard }]}>
-          <Text style={[ls.title, { color: colors.textPrimary }]}>Welcome back</Text>
-          <Text style={[ls.subtitle, { color: colors.textMuted }]}>Sign in to your account</Text>
+          <View style={ls.langRow}>
+            <Text style={[ls.langLabel, { color: colors.textMuted }]}>{t('common.language')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={ls.langList}>
+              {supportedLanguages.map((item) => (
+                <TouchableOpacity
+                  key={item.code}
+                  onPress={() => setLanguage(item.code)}
+                  style={[
+                    ls.langChip,
+                    {
+                      borderColor: language === item.code ? colors.primary : colors.border,
+                      backgroundColor: language === item.code ? colors.primarySoft : colors.bgCard,
+                    },
+                  ]}
+                >
+                  <Text style={{ color: language === item.code ? colors.primary : colors.textMuted, fontSize: 11, fontWeight: '700' }}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          <Text style={[ls.title, { color: colors.textPrimary }]}>{t('login.title')}</Text>
+          <Text style={[ls.subtitle, { color: colors.textMuted }]}>{t('login.subtitle')}</Text>
 
           {/* Role Picker */}
           <View style={ls.roleRow}>
@@ -118,6 +153,7 @@ export default function LoginScreen() {
               <RoleButton 
                 key={r} 
                 role={r} 
+                label={r === 'patient' ? t('common.patient') : t('common.doctor')}
                 selected={role === r} 
                 colors={colors}
                 onPress={() => { setRole(r); setLoginMode(r === 'doctor' ? 'hospitalId' : 'email'); setError(''); }}
@@ -139,25 +175,25 @@ export default function LoginScreen() {
         <View style={ls.inputGroup}>
           {loginMode === 'email' && (
             <>
-              <Text style={[ls.label, { color: colors.textMuted }]}>Email Address</Text>
+              <Text style={[ls.label, { color: colors.textMuted }]}>{t('login.field.email')}</Text>
               <TextInput style={[ls.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder={role === 'doctor' ? 'doctor@hospital.com' : 'you@example.com'} value={identifier} onChangeText={setIdentifier} keyboardType="email-address" autoCapitalize="none" placeholderTextColor={colors.textFaint} />
             </>
           )}
           {loginMode === 'mobile' && (
             <>
-              <Text style={[ls.label, { color: colors.textMuted }]}>Mobile Number</Text>
+              <Text style={[ls.label, { color: colors.textMuted }]}>{t('login.field.mobile')}</Text>
               <TextInput style={[ls.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="+91 98765 43210" value={identifier} onChangeText={setIdentifier} keyboardType="phone-pad" placeholderTextColor={colors.textFaint} />
             </>
           )}
           {loginMode === 'username' && (
             <>
-              <Text style={[ls.label, { color: colors.textMuted }]}>Username</Text>
+              <Text style={[ls.label, { color: colors.textMuted }]}>{t('login.field.username')}</Text>
               <TextInput style={[ls.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="your_username" value={identifier} onChangeText={setIdentifier} autoCapitalize="none" placeholderTextColor={colors.textFaint} />
             </>
           )}
           {loginMode === 'hospitalId' && (
             <>
-              <Text style={[ls.label, { color: colors.textMuted }]}>Hospital ID</Text>
+              <Text style={[ls.label, { color: colors.textMuted }]}>{t('login.field.hospitalId')}</Text>
               <TextInput style={[ls.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="e.g. HOSP-2024-001" value={identifier} onChangeText={setIdentifier} autoCapitalize="none" placeholderTextColor={colors.textFaint} />
             </>
           )}
@@ -165,8 +201,8 @@ export default function LoginScreen() {
 
         {/* Password */}
         <View style={ls.inputGroup}>
-          <Text style={[ls.label, { color: colors.textMuted }]}>Password</Text>
-          <TextInput style={[ls.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder="Enter your password" value={password} onChangeText={setPassword} secureTextEntry placeholderTextColor={colors.textFaint} />
+          <Text style={[ls.label, { color: colors.textMuted }]}>{t('login.field.password')}</Text>
+          <TextInput style={[ls.input, { backgroundColor: colors.bgCard, borderColor: colors.border, color: colors.textPrimary }]} placeholder={t('login.placeholder.password')} value={password} onChangeText={setPassword} secureTextEntry placeholderTextColor={colors.textFaint} />
         </View>
 
         {/* Error */}
@@ -180,23 +216,23 @@ export default function LoginScreen() {
         ) : null}
 
           {/* Sign In */}
-          <Button label={loading ? 'Signing in...' : `Sign In as ${role === 'doctor' ? 'Doctor' : 'Patient'}`} onPress={handleSignIn} disabled={loading} size="lg" style={{ marginTop: 8 }} />
+          <Button label={loading ? t('login.button.signingIn') : t('login.button.signInAs', { role: role === 'doctor' ? t('common.doctor') : t('common.patient') })} onPress={handleSignIn} disabled={loading} size="lg" style={{ marginTop: 8 }} />
         </View>
 
         {/* Demo shortcuts */}
         <View style={[ls.demoBox, { backgroundColor: colors.primarySoft, borderColor: colors.primary }]}>
-          <Text style={[ls.demoLabel, { color: colors.primary }]}>QUICK DEMO ACCESS</Text>
+          <Text style={[ls.demoLabel, { color: colors.primary }]}>{t('login.demo.quickAccess')}</Text>
           <View style={ls.demoRow}>
-            <Button label="Doctor" onPress={() => handleDemoAccess('doctor')} variant="outline" size="sm" style={{ flex: 1, marginRight: 8 }} />
-            <Button label="Patient" onPress={() => handleDemoAccess('patient')} variant="outline" size="sm" style={{ flex: 1 }} />
+            <Button label={t('common.doctor')} onPress={() => handleDemoAccess('doctor')} variant="outline" size="sm" style={{ flex: 1, marginRight: 8 }} />
+            <Button label={t('common.patient')} onPress={() => handleDemoAccess('patient')} variant="outline" size="sm" style={{ flex: 1 }} />
           </View>
         </View>
 
         {/* Register */}
         <TouchableOpacity onPress={() => router.push('/screens/Register')} style={{ marginTop: 20, alignItems: 'center' }} activeOpacity={0.7}>
           <Text style={{ fontSize: 13, color: colors.textMuted }}>
-            Don't have an account?{' '}
-            <Text style={{ color: colors.primary, fontWeight: '600' }}>Create account</Text>
+            {t('login.register.prompt')}{' '}
+            <Text style={{ color: colors.primary, fontWeight: '600' }}>{t('login.register.cta')}</Text>
           </Text>
         </TouchableOpacity>
 
@@ -206,7 +242,7 @@ export default function LoginScreen() {
 }
 
 // Role Button Component
-function RoleButton({ role, selected, colors, onPress }: { role: Role; selected: boolean; colors: any; onPress: () => void }) {
+function RoleButton({ role, label, selected, colors, onPress }: { role: Role; label: string; selected: boolean; colors: any; onPress: () => void }) {
   const scale = useRef(new Animated.Value(1)).current;
   const animate = (toValue: number) => Animated.spring(scale, { toValue, useNativeDriver: true, tension: 200 }).start();
 
@@ -234,7 +270,7 @@ function RoleButton({ role, selected, colors, onPress }: { role: Role; selected:
           size={40} 
         />
         <Text style={[ls.roleBtnText, { color: selected ? colors.primary : colors.textMuted }]}>
-          {role === 'patient' ? 'Patient' : 'Doctor'}
+          {label}
         </Text>
       </TouchableOpacity>
     </Animated.View>
@@ -289,6 +325,10 @@ const ls = StyleSheet.create({
   brandSub: { fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', marginTop: 4, color: 'rgba(255,255,255,0.7)' },
   title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5, marginTop: -30 },
   subtitle: { fontSize: 13, marginBottom: 24, marginTop: 4 },
+  langRow: { marginTop: -30, marginBottom: 16 },
+  langLabel: { fontSize: 11, fontWeight: '700', marginBottom: 8 },
+  langList: { gap: 8, paddingRight: 12 },
+  langChip: { paddingVertical: 6, paddingHorizontal: 10, borderWidth: 1, borderRadius: 999 },
   formCard: {
     backgroundColor: '#fff',
     borderRadius: 24,

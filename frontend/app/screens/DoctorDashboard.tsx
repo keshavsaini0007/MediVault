@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { StatCard, Card, CardHeader, Badge, Button, ProgressBar, Avatar, IconBox, ColorIcon } from '../../components/UI';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { doctorAPI } from '../../services/api';
 
 interface Patient {
@@ -175,6 +176,7 @@ function AlertRow({ symptom }: { symptom: SymptomLog }) {
 export default function DoctorDashboard() {
   const router = useRouter();
   const { colors, userName } = useTheme();
+  const { t } = useLanguage();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -229,15 +231,15 @@ export default function DoctorDashboard() {
   };
 
   const quickActions: Array<{ icon: keyof typeof Ionicons.glyphMap; label: string; route: Href; bg: string; fg: string }> = [
-    { icon: 'people-outline', label: 'Patients', route: '/screens/Patients', bg: colors.primarySoft, fg: colors.primary },
-    { icon: 'alert-circle-outline', label: 'Alerts', route: '/screens/Alerts', bg: colors.dangerSoft, fg: colors.danger },
-    { icon: 'chatbubbles-outline', label: 'Messages', route: '/screens/Messages', bg: colors.tealSoft, fg: colors.teal },
-    { icon: 'notifications-outline', label: 'Notifications', route: '/screens/Notifications', bg: colors.warningSoft, fg: colors.warning },
+    { icon: 'people-outline', label: t('doctor.qa.patients'), route: '/screens/Patients', bg: colors.primarySoft, fg: colors.primary },
+    { icon: 'alert-circle-outline', label: t('doctor.qa.alerts'), route: '/screens/Alerts', bg: colors.dangerSoft, fg: colors.danger },
+    { icon: 'chatbubbles-outline', label: t('doctor.qa.messages'), route: '/screens/Messages', bg: colors.tealSoft, fg: colors.teal },
+    { icon: 'notifications-outline', label: t('doctor.qa.notifications'), route: '/screens/Notifications', bg: colors.warningSoft, fg: colors.warning },
   ];
 
   return (
     <BottomNavLayout
-      title="Doctor Dashboard"
+      title={t('doctor.title')}
       subtitle={getDateString()}
       role="doctor"
     >
@@ -249,35 +251,35 @@ export default function DoctorDashboard() {
         {/* Stats */}
         <View style={s.statsGrid}>
           <View style={s.statHalf}>
-            <StatCard icon="people-outline" value={String(dashboard?.assignedPatients ?? 0)} label="Total Patients" />
+            <StatCard icon="people-outline" value={String(dashboard?.assignedPatients ?? 0)} label={t('doctor.stats.totalPatients')} />
           </View>
           <View style={s.statHalf}>
-            <StatCard icon="alert-circle-outline" value={String(dashboard?.highUrgencyPatients ?? 0)} label="Critical Alerts" iconBg={colors.dangerSoft} valueColor={colors.danger} iconColor={colors.danger} />
+            <StatCard icon="alert-circle-outline" value={String(dashboard?.highUrgencyPatients ?? 0)} label={t('doctor.stats.criticalAlerts')} iconBg={colors.dangerSoft} valueColor={colors.danger} iconColor={colors.danger} />
           </View>
           <View style={s.statHalf}>
-            <StatCard icon="warning-outline" value={String(dashboard?.mediumUrgencyPatients ?? 0)} label="Moderate Alerts" iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} />
+            <StatCard icon="warning-outline" value={String(dashboard?.mediumUrgencyPatients ?? 0)} label={t('doctor.stats.moderateAlerts')} iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} />
           </View>
           <View style={s.statHalf}>
-            <StatCard icon="medical-outline" value={String(dashboard?.missedDosesLast24h ?? 0)} label="Missed (24h)" iconBg={colors.accentSoft} valueColor={colors.accent} iconColor={colors.accent} />
+            <StatCard icon="medical-outline" value={String(dashboard?.missedDosesLast24h ?? 0)} label={t('doctor.stats.missed24h')} iconBg={colors.accentSoft} valueColor={colors.accent} iconColor={colors.accent} />
           </View>
         </View>
 
         {/* Recent Alerts */}
         <Card variant="elevated" glowColor={colors.danger}>
           <CardHeader
-            title="Recent Patient Alerts"
+            title={t('doctor.section.recentAlerts')}
             icon="alert-circle-outline"
             right={
-              <Button label="View All" style={{ marginLeft: 10 }}
+              <Button label={t('common.viewAll')} style={{ marginLeft: 10 }}
                 onPress={() => router.push('/screens/Alerts')} variant="outline" size="sm" />
             }
           />
           <View style={{ padding: 12, gap: 10 }}>
             {loading ? (
-              <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>Loading...</Text>
+              <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>{t('common.loading')}</Text>
             ) : recentSymptoms.length === 0 ? (
               <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>
-                No recent alerts
+                {t('doctor.empty.noRecentAlerts')}
               </Text>
             ) : (
               recentSymptoms.slice(0, 5).map((symptom) => (
@@ -297,21 +299,21 @@ export default function DoctorDashboard() {
         {/* Patients Overview */}
         <Card variant="elevated" glowColor={colors.primary}>
           <CardHeader
-            title="Patients Overview"
+            title={t('doctor.section.patientsOverview')}
             icon="people-outline"
             right={
-              <Button label="View All" onPress={() => router.push('/screens/Patients')} variant="outline" size="sm" />
+              <Button label={t('common.viewAll')} onPress={() => router.push('/screens/Patients')} variant="outline" size="sm" />
             }
           />
           <View style={{ padding: 16, gap: 12 }}>
             {loading ? (
-              <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>Loading...</Text>
+              <Text style={{ color: colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>{t('common.loading')}</Text>
             ) : patients.length === 0 ? (
               <View style={{ alignItems: 'center', paddingVertical: 20 }}>
                 <IconBox icon="people-outline" color={colors.textFaint} bg={colors.primarySoft} size={56} />
-                <Text style={{ color: colors.textMuted, marginTop: 12 }}>No patients assigned yet</Text>
+                <Text style={{ color: colors.textMuted, marginTop: 12 }}>{t('doctor.empty.noPatients')}</Text>
                 <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 4 }}>
-                  Patients will appear here when assigned
+                  {t('doctor.empty.noPatientsHint')}
                 </Text>
               </View>
             ) : (

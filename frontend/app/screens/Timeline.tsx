@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { Card, Badge, Button, IconBox } from '../../components/UI';
 import { patientAPI, symptomAPI, MedRecord, Report, SymptomLog } from '../../services/api';
@@ -53,6 +54,7 @@ function getTypeMeta(type: string, colors: any) {
 export default function TimelineScreen() {
   const router = useRouter();
   const { role, colors } = useTheme();
+  const { t } = useLanguage();
   const [typeFilter, setTypeFilter] = useState('All');
   const [timelineData, setTimelineData] = useState<TimelineGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,7 @@ export default function TimelineScreen() {
 
       setTimelineData(Object.values(grouped));
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load timeline');
+      Alert.alert(t('common.error'), error.message || t('timeline.error.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -153,8 +155,8 @@ export default function TimelineScreen() {
 
   return (
     <BottomNavLayout 
-      title="Health Timeline" 
-      subtitle="Your complete health story" 
+      title={t('timeline.title')} 
+      subtitle={t('timeline.subtitle')} 
       role="patient"
       showBack
       onBack={handleBack}
@@ -176,7 +178,7 @@ export default function TimelineScreen() {
               ]}
             >
               <Text style={[st.filterText, { color: active ? meta.color : colors.textMuted }]}>
-                {t === 'All' ? 'All Events' : meta.label}
+                {t === 'All' ? t('timeline.allEvents') : meta.label}
               </Text>
             </TouchableOpacity>
           );
@@ -190,8 +192,8 @@ export default function TimelineScreen() {
           <Card glowColor={colors.primary}>
             <View style={{ alignItems: 'center', padding: 40 }}>
               <IconBox icon="folder-open-outline" color={colors.textFaint} bg={colors.primarySoft} size={72} />
-              <Text style={{ fontWeight: '700', fontSize: 16, color: colors.textMuted, marginTop: 16 }}>No events in this category</Text>
-              <Text style={{ fontSize: 13, color: colors.textFaint, marginTop: 6 }}>Your health events will appear here</Text>
+              <Text style={{ fontWeight: '700', fontSize: 16, color: colors.textMuted, marginTop: 16 }}>{t('timeline.empty.noEvents')}</Text>
+              <Text style={{ fontSize: 13, color: colors.textFaint, marginTop: 6 }}>{t('timeline.empty.eventsAppear')}</Text>
             </View>
           </Card>
         )}

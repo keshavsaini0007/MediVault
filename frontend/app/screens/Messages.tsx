@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useBadges } from '../../context/BadgeContext';
 
 const CONVERSATIONS = [
@@ -17,6 +18,7 @@ const CONVERSATIONS = [
 
 export default function MessagesScreen() {
   const { colors, userName, userInitial } = useTheme();
+  const { t } = useLanguage();
   // ✅ messages, openConv, sendMessage all live in context — persist across navigation
   const { clearMessages, messages, openConv, sendMessage } = useBadges();
 
@@ -50,7 +52,7 @@ export default function MessagesScreen() {
 
   const getLastMsg = (id: number): string => {
     const thread = messages[id];
-    if (!thread || thread.length === 0) return 'No messages yet';
+    if (!thread || thread.length === 0) return t('msg.noMessagesYet');
     return thread[thread.length - 1].text;
   };
 
@@ -60,7 +62,7 @@ export default function MessagesScreen() {
   /* ── Conversation List ── */
   if (!activeConv) {
     return (
-      <BottomNavLayout title="Messages" subtitle="Patient communications" role="doctor">
+      <BottomNavLayout title={t('msg.title')} subtitle={t('msg.subtitle')} role="doctor">
         <View style={{ flex: 1, backgroundColor: colors.bgPage }}>
 
           {/* Search */}
@@ -68,7 +70,7 @@ export default function MessagesScreen() {
             <Ionicons name="search" size={18} color={colors.textFaint} style={{ marginRight: 8 }} />
             <TextInput
               style={[s.searchInput, { color: colors.textPrimary }]}
-              placeholder="Search patients…"
+              placeholder={t('msg.searchPlaceholder')}
               placeholderTextColor={colors.textFaint}
             />
           </View>
@@ -132,7 +134,7 @@ export default function MessagesScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <BottomNavLayout
-        title={activePatient?.name || 'Chat'}
+        title={activePatient?.name || t('msg.chat')}
         subtitle={activePatient?.condition}
         role="doctor"
         showBack
@@ -182,7 +184,7 @@ export default function MessagesScreen() {
           <View style={[s.inputBar, { backgroundColor: colors.bgCard, borderTopColor: colors.border }]}>
             <TextInput
               style={[s.msgInput, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="Type a message…"
+              placeholder={t('msg.typeMessage')}
               value={input}
               onChangeText={setInput}
               multiline

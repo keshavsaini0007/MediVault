@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { Card, CardHeader, Badge, Button, ProgressBar, IconBox } from '../../components/UI';
 import { symptomAPI, SymptomLog } from '../../services/api';
@@ -21,6 +22,7 @@ const CHIPS = ['Fever', 'Headache', 'Cough', 'Nausea', 'Body Ache', 'Fatigue', '
 export default function SymptomsScreen() {
   const router = useRouter();
   const { role, userName, userInitial, colors } = useTheme();
+  const { t } = useLanguage();
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -58,9 +60,9 @@ export default function SymptomsScreen() {
         : symptoms;
       const result = await symptomAPI.checkSymptoms(combinedSymptoms);
       setHistory(prev => [result, ...prev]);
-      Alert.alert('Analysis Complete', `Urgency: ${result.urgency}\nRecommended: ${result.specialistType}`);
+      Alert.alert(t('symptoms.alert.analysisComplete'), `${t('symptoms.urgency')}: ${result.urgency}\n${t('symptoms.recommended')}: ${result.specialistType}`);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to analyze symptoms');
+      Alert.alert(t('common.error'), error.message || t('symptoms.error.analyzeFailed'));
     } finally {
       setLoading(false);
     }
@@ -94,8 +96,8 @@ export default function SymptomsScreen() {
 
   return (
     <BottomNavLayout 
-      title="Symptom Checker" 
-      subtitle="AI-powered triage assistant" 
+      title={t('symptoms.title')} 
+      subtitle={t('symptoms.subtitle')} 
       role="patient"
       showBack
       onBack={handleBack}
@@ -106,19 +108,19 @@ export default function SymptomsScreen() {
 
         {/* Input */}
         <Card glowColor={colors.teal}>
-          <CardHeader title="Describe Your Symptoms" icon="chatbox-ellipses-outline" />
+          <CardHeader title={t('symptoms.section.describe')} icon="chatbox-ellipses-outline" />
           <View style={{ padding: 16 }}>
-            <Text style={[sy.label, { color: colors.textMuted }]}>What symptoms are you experiencing?</Text>
+            <Text style={[sy.label, { color: colors.textMuted }]}>{t('symptoms.whatExperiencing')}</Text>
             <TextInput
               style={[sy.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-              placeholder="e.g. I have high fever since yesterday, severe headache, body ache..."
+              placeholder={t('symptoms.placeholder')}
               value={symptoms}
               onChangeText={setSymptoms}
               multiline
               placeholderTextColor={colors.textFaint}
             />
 
-            <Text style={[sy.label, { color: colors.textMuted, marginTop: 16 }]}>Quick Select Common Symptoms</Text>
+            <Text style={[sy.label, { color: colors.textMuted, marginTop: 16 }]}>{t('symptoms.quickSelect')}</Text>
             <View style={sy.chipsRow}>
               {CHIPS.map(s => {
                 const active = selectedChips.includes(s);
@@ -138,7 +140,7 @@ export default function SymptomsScreen() {
             </View>
 
             <Button
-              label={loading ? 'Analysing with AI...' : 'Analyse Symptoms'}
+              label={loading ? t('symptoms.analyzing') : t('symptoms.analyzeButton')}
               onPress={analyze}
               disabled={loading}
               size="lg"
@@ -148,7 +150,7 @@ export default function SymptomsScreen() {
             {loading && (
               <View style={{ alignItems: 'center', marginTop: 12 }}>
                 <ActivityIndicator color={colors.teal} />
-                <Text style={{ fontSize: 12, color: colors.textFaint, marginTop: 8 }}>AI is processing your symptoms...</Text>
+                <Text style={{ fontSize: 12, color: colors.textFaint, marginTop: 8 }}>{t('symptoms.processing')}</Text>
               </View>
             )}
           </View>
@@ -160,7 +162,7 @@ export default function SymptomsScreen() {
             <View style={[sy.disclaimer, { backgroundColor: colors.warningSoft, borderColor: colors.warning }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <IconBox icon="warning" color={colors.warning} bg={colors.warningSoft} size={28} />
-                <Text style={[sy.disclaimerText, { color: colors.warning }]}>AI Disclaimer: For informational purposes only. Not a substitute for professional medical diagnosis.</Text>
+                <Text style={[sy.disclaimerText, { color: colors.warning }]}>{t('symptoms.disclaimer')}</Text>
               </View>
             </View>
             <Card glowColor={getUrgencyColor(history[0].urgency)}>
@@ -175,10 +177,10 @@ export default function SymptomsScreen() {
                     />
                     <View>
                       <Text style={{ fontWeight: '700', fontSize: 16, color: colors.textPrimary }}>
-                        {history[0].aiConditions?.[0] || 'Analysis Complete'}
+                        {history[0].aiConditions?.[0] || t('symptoms.alert.analysisComplete')}
                       </Text>
                       <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-                        Recommended: {history[0].specialistType}
+                        {t('symptoms.recommended')}: {history[0].specialistType}
                       </Text>
                     </View>
                   </View>
@@ -188,19 +190,19 @@ export default function SymptomsScreen() {
                   />
                 </View>
                 <View style={{ backgroundColor: colors.bgPage, padding: 14, borderRadius: 12, marginBottom: 10 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.teal, marginBottom: 6 }}>YOUR SYMPTOMS</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.teal, marginBottom: 6 }}>{t('symptoms.yourSymptoms')}</Text>
                   <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 21 }}>{history[0].symptoms}</Text>
                 </View>
                 <View style={{ backgroundColor: colors.tealSoft, padding: 14, borderRadius: 12 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <Ionicons name="bulb" size={16} color={colors.teal} />
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.teal }}>AI ADVICE</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.teal }}>{t('symptoms.aiAdvice')}</Text>
                   </View>
                   <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 21 }}>{history[0].advice}</Text>
                 </View>
                 {history[0].aiConditions && history[0].aiConditions.length > 1 && (
                   <View style={{ marginTop: 14 }}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textFaint, marginBottom: 8 }}>POSSIBLE CONDITIONS</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textFaint, marginBottom: 8 }}>{t('symptoms.possibleConditions')}</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                       {history[0].aiConditions.slice(1).map((condition, idx) => (
                         <View key={idx} style={{ backgroundColor: colors.tealSoft, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14 }}>
@@ -217,7 +219,7 @@ export default function SymptomsScreen() {
 
         {/* Matched Doctors */}
         <Card glowColor={colors.primary}>
-          <CardHeader title="Matched Doctors" icon="people-outline" />
+          <CardHeader title={t('symptoms.section.matchedDoctors')} icon="people-outline" />
           <View style={{ padding: 16 }}>
             {doctors.map((doc, i) => (
               <View key={i} style={[sy.docRow, i < doctors.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft, paddingBottom: 14, marginBottom: 14 }]}>
@@ -229,10 +231,10 @@ export default function SymptomsScreen() {
                     <Ionicons name="star" size={12} color="#F59E0B" />
                     <Text style={{ fontSize: 12, color: '#F59E0B' }}>{doc.rating}</Text>
                     <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: doc.available ? colors.success : colors.gray300 }} />
-                    <Text style={{ fontSize: 12, color: doc.available ? colors.success : colors.textFaint }}>{doc.available ? 'Available' : 'Busy'}</Text>
+                    <Text style={{ fontSize: 12, color: doc.available ? colors.success : colors.textFaint }}>{doc.available ? t('symptoms.available') : t('symptoms.busy')}</Text>
                   </View>
                 </View>
-                <Button label={doc.available ? 'Book' : 'Full'} onPress={() => {}} disabled={!doc.available} size="sm" variant={doc.available ? 'primary' : 'outline'} />
+                <Button label={doc.available ? t('symptoms.book') : t('symptoms.full')} onPress={() => {}} disabled={!doc.available} size="sm" variant={doc.available ? 'primary' : 'outline'} />
               </View>
             ))}
           </View>
@@ -240,19 +242,19 @@ export default function SymptomsScreen() {
 
         {/* Recent Checks */}
         <Card glowColor={colors.teal}>
-          <CardHeader title="Recent Checks" icon="time-outline" />
+          <CardHeader title={t('symptoms.section.recentChecks')} icon="time-outline" />
           <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
             {history.length === 0 ? (
               <View style={{ alignItems: 'center', paddingVertical: 20 }}>
                 <IconBox icon="document-text-outline" color={colors.textFaint} bg={colors.tealSoft} size={52} />
-                <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 12 }}>No symptom history yet</Text>
+                <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 12 }}>{t('symptoms.empty.noHistory')}</Text>
               </View>
             ) : (
               history.slice(0, 5).map((c, i) => (
                 <View key={c._id || i} style={[{ paddingVertical: 12 }, i < Math.min(history.length, 5) - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
                   <Text style={{ fontWeight: '600', fontSize: 13, color: colors.textPrimary }}>{c.symptoms}</Text>
                   <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 3 }}>
-                    {new Date(c.createdAt).toLocaleDateString()} - {c.aiConditions?.[0] || 'Analyzed'}
+                    {new Date(c.createdAt).toLocaleDateString()} - {c.aiConditions?.[0] || t('symptoms.analyzed')}
                   </Text>
                 </View>
               ))

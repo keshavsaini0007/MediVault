@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { Card, CardHeader, Badge, Button, IconBox } from '../../components/UI';
 import { patientAPI, Report } from '../../services/api';
@@ -15,6 +16,7 @@ const reportTypes = ['X-Ray', 'Blood Test', 'MRI', 'CT Scan', 'Ultrasound', 'ECG
 
 export default function ReportsScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,7 +53,7 @@ export default function ReportsScreen() {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission Required', 'Please allow access to your photos to upload reports.');
+        Alert.alert(t('reports.alert.permissionTitle'), t('reports.alert.permissionBody'));
         return;
       }
 
@@ -67,13 +69,13 @@ export default function ReportsScreen() {
         setUploadSuccess(null);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      Alert.alert(t('common.error'), t('reports.error.pickImage'));
     }
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      Alert.alert('Select File', 'Please select a file to upload');
+      Alert.alert(t('reports.alert.selectFileTitle'), t('reports.alert.selectFileBody'));
       return;
     }
 
@@ -95,11 +97,11 @@ export default function ReportsScreen() {
       setShowSuccess(true);
       setUploadSuccess({
         type: selectedType,
-        summary: newReport.aiSummary || 'Report uploaded successfully.',
+        summary: newReport.aiSummary || t('reports.alert.uploadedSuccessfully'),
       });
       setSelectedFile(null);
     } catch (error) {
-      Alert.alert('Upload Failed', error instanceof Error ? error.message : 'Failed to upload report');
+      Alert.alert(t('reports.alert.uploadFailedTitle'), error instanceof Error ? error.message : t('reports.error.uploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -110,27 +112,27 @@ export default function ReportsScreen() {
       try {
         await WebBrowser.openBrowserAsync(report.fileUrl);
       } catch (error) {
-        Alert.alert('Error', 'Failed to open report');
+        Alert.alert(t('common.error'), t('reports.error.openFailed'));
       }
     }
   };
 
   const handleDeleteReport = async (reportId: string) => {
     Alert.alert(
-      'Delete Report',
-      'Are you sure you want to delete this report?',
+      t('reports.alert.deleteTitle'),
+      t('reports.alert.deleteBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('reports.action.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await patientAPI.deleteReport(reportId);
               setReports(prev => prev.filter(r => r._id !== reportId));
-              Alert.alert('Success', 'Report deleted');
+              Alert.alert(t('med.alert.successTitle'), t('reports.alert.deleted'));
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete report');
+              Alert.alert(t('common.error'), t('reports.error.deleteFailed'));
             }
           },
         },
@@ -162,7 +164,7 @@ export default function ReportsScreen() {
   };
 
   return (
-    <BottomNavLayout title="Reports" subtitle="Upload and manage your reports" role="patient">
+    <BottomNavLayout title={t('reports.title')} subtitle={t('reports.subtitle')} role="patient">
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
@@ -170,9 +172,9 @@ export default function ReportsScreen() {
       >
         {/* Upload Card */}
         <Card variant="elevated" glowColor={colors.teal}>
-          <CardHeader title="Upload Medical Report" icon="cloud-upload-outline" />
+          <CardHeader title={t('reports.section.upload')} icon="cloud-upload-outline" />
           <View style={{ padding: 16 }}>
-            <Text style={[rp.label, { color: colors.textMuted }]}>Report Type</Text>
+            <Text style={[rp.label, { color: colors.textMuted }]}>{t('reports.field.reportType')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
               {reportTypes.map(t => (
                 <TouchableOpacity
@@ -199,17 +201,17 @@ export default function ReportsScreen() {
               {selectedFile ? (
                 <View style={{ alignItems: 'center' }}>
                   <IconBox icon="checkmark-circle" color={colors.success} bg={colors.successSoft} size={52} />
-                  <Text style={[rp.dropText, { color: colors.textPrimary, marginTop: 10 }]}>File Selected</Text>
-                  <Text style={[rp.dropSub, { color: colors.textFaint }]}>{selectedFile.fileName || 'image.jpg'}</Text>
+                  <Text style={[rp.dropText, { color: colors.textPrimary, marginTop: 10 }]}>{t('reports.fileSelected')}</Text>
+                  <Text style={[rp.dropSub, { color: colors.textFaint }]}>{selectedFile.fileName || t('reports.defaultImageName')}</Text>
                   <TouchableOpacity onPress={() => setSelectedFile(null)} style={[rp.removeBtn, { backgroundColor: colors.dangerSoft }]} activeOpacity={0.7}>
-                    <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '600' }}>Remove</Text>
+                    <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '600' }}>{t('reports.action.remove')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <View style={{ alignItems: 'center' }}>
                   <IconBox icon="cloud-upload-outline" color={colors.teal} bg={colors.tealSoft} size={52} />
-                  <Text style={[rp.dropText, { color: colors.textPrimary, marginTop: 10 }]}>Tap to upload file</Text>
-                  <Text style={[rp.dropSub, { color: colors.textFaint }]}> PDF, JPG, PNG up to 10MB </Text>
+                  <Text style={[rp.dropText, { color: colors.textPrimary, marginTop: 10 }]}>{t('reports.tapToUpload')}</Text>
+                  <Text style={[rp.dropSub, { color: colors.textFaint }]}>{t('reports.supportedFormats')}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -238,7 +240,7 @@ export default function ReportsScreen() {
 
             {/* Upload button */}
             <Button
-              label={uploading ? 'Uploading & Analysing...' : 'Upload Report'}
+              label={uploading ? t('reports.uploadingAnalysing') : t('reports.action.uploadReport')}
               onPress={handleUpload}
               disabled={uploading || !selectedFile}
               size="lg"
@@ -248,7 +250,7 @@ export default function ReportsScreen() {
             {uploading && (
               <View style={{ alignItems: 'center', marginTop: 14 }}>
                 <ActivityIndicator color={colors.teal} />
-                <Text style={{ fontSize: 12, color: colors.textFaint, marginTop: 8 }}>AI is analysing your report...</Text>
+                <Text style={{ fontSize: 12, color: colors.textFaint, marginTop: 8 }}>{t('reports.aiAnalyzing')}</Text>
               </View>
             )}
 
@@ -256,11 +258,11 @@ export default function ReportsScreen() {
               <View style={[rp.successBox, { backgroundColor: colors.successSoft, borderColor: colors.success + '30' }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                   <IconBox icon="checkmark-circle" color={colors.success} bg={colors.success} size={24} />
-                  <Text style={[rp.successTitle, { color: colors.success }]}>Upload Successful!</Text>
+                  <Text style={[rp.successTitle, { color: colors.success }]}>{t('reports.uploadSuccessTitle')}</Text>
                 </View>
                 <Text style={[rp.successBody, { color: colors.success }]}>{uploadSuccess.summary}</Text>
                 <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 8 }}>
-                  Not a substitute for professional medical advice.
+                  {t('reports.disclaimer')}
                 </Text>
               </View>
             )}
@@ -269,7 +271,7 @@ export default function ReportsScreen() {
 
         {/* My Reports */}
         <Card variant="elevated" glowColor={colors.teal}>
-          <CardHeader title="My Reports" icon="folder-outline" right={<Badge label={`${reports.length} reports`} />} />
+          <CardHeader title={t('reports.section.myReports')} icon="folder-outline" right={<Badge label={`${reports.length} ${t('reports.reportsCount')}`} />} />
           <View>
             {loading ? (
               <View style={{ alignItems: 'center', padding: 30 }}>
@@ -278,8 +280,8 @@ export default function ReportsScreen() {
             ) : reports.length === 0 ? (
               <View style={{ alignItems: 'center', padding: 32 }}>
                 <IconBox icon="folder-open-outline" color={colors.textFaint} bg={colors.tealSoft} size={64} />
-                <Text style={{ fontWeight: '700', fontSize: 15, color: colors.textMuted, marginTop: 14 }}>No reports uploaded yet</Text>
-                <Text style={{ fontSize: 13, color: colors.textFaint, marginTop: 6 }}>Upload your first medical report above</Text>
+                <Text style={{ fontWeight: '700', fontSize: 15, color: colors.textMuted, marginTop: 14 }}>{t('reports.empty.noReports')}</Text>
+                <Text style={{ fontSize: 13, color: colors.textFaint, marginTop: 6 }}>{t('reports.empty.uploadFirst')}</Text>
               </View>
             ) : (
               reports.map((r, i) => (
@@ -301,14 +303,14 @@ export default function ReportsScreen() {
                       <TouchableOpacity onPress={() => handleDeleteReport(r._id)} activeOpacity={0.7}>
                         <Ionicons name="trash-outline" size={20} color={colors.danger} />
                       </TouchableOpacity>
-                      <Button label="View" onPress={() => handleViewReport(r)} size="sm" />
+                      <Button label={t('common.view')} onPress={() => handleViewReport(r)} size="sm" />
                     </View>
                   </View>
                   {r.aiSummary && (
                     <View style={[rp.aiBox, { backgroundColor: colors.bgPage, borderLeftColor: colors.teal }]}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                         <Ionicons name="bulb-outline" size={16} color={colors.teal} />
-                        <Text style={[rp.aiLabel, { color: colors.teal }]}>AI SUMMARY</Text>
+                        <Text style={[rp.aiLabel, { color: colors.teal }]}>{t('reports.aiSummary')}</Text>
                       </View>
                       <Text style={[rp.aiText, { color: colors.textMuted }]}>{r.aiSummary}</Text>
                     </View>

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, TextInput,
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useBadges } from '../../context/BadgeContext';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { StatCard, Card, Badge, Button } from '../../components/UI';
@@ -16,6 +17,7 @@ interface AlertItem extends SymptomLog {
 export default function AlertsScreen() {
   const router = useRouter();
   const { userName, userInitial, colors } = useTheme();
+  const { t } = useLanguage();
   const { clearAlerts, doctorNotifs } = useBadges();
 
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -42,12 +44,12 @@ export default function AlertsScreen() {
         .filter(s => s.urgency === 'high')
         .map(s => ({
           ...s,
-          patientName: s.patientId?.name || 'Unknown',
+          patientName: s.patientId?.name || t('alerts.unknown'),
           patientPhone: '',
         }));
       setAlerts(highUrgency);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load alerts');
+      Alert.alert(t('common.error'), error.message || t('alerts.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -77,15 +79,15 @@ export default function AlertsScreen() {
 
   const sendSMS = () => {
     if (!smsText.trim()) return;
-    Alert.alert('SMS Sent', `Message sent to ${showSMS?.patientName} via Twilio.`);
+    Alert.alert(t('alerts.smsSentTitle'), `${t('alerts.messageSentTo')} ${showSMS?.patientName} ${t('alerts.viaTwilio')}`);
     setShowSMS(null);
     setSmsText('');
   };
 
   return (
     <BottomNavLayout
-      title="Alerts"
-      subtitle="Action required"
+      title={t('alerts.title')}
+      subtitle={t('alerts.subtitle')}
       role="doctor"
     >
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}
@@ -94,17 +96,17 @@ export default function AlertsScreen() {
         {/* Stats */}
         <View style={al.statsGrid}>
           <View style={al.statHalf}>
-            {loading ? <StatCard icon="notifications-outline" value="-" label="Total Alerts" /> : <StatCard icon="notifications-outline" value={alerts.length} label="Total Alerts" />}
+            {loading ? <StatCard icon="notifications-outline" value="-" label={t('alerts.totalAlerts')} /> : <StatCard icon="notifications-outline" value={alerts.length} label={t('alerts.totalAlerts')} />}
           </View>
-          <View style={al.statHalf}><StatCard icon="alert-circle-outline" value={pending.length} label="Critical" iconBg={colors.dangerSoft} valueColor={colors.danger} iconColor={colors.danger} /></View>
-          <View style={al.statHalf}><StatCard icon="time-outline" value={pending.length} label="Pending" iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} /></View>
-          <View style={al.statHalf}><StatCard icon="checkmark-circle-outline" value={resolved.length} label="Responded" iconBg={colors.successSoft} valueColor={colors.success} iconColor={colors.success} /></View>
+          <View style={al.statHalf}><StatCard icon="alert-circle-outline" value={pending.length} label={t('alerts.critical')} iconBg={colors.dangerSoft} valueColor={colors.danger} iconColor={colors.danger} /></View>
+          <View style={al.statHalf}><StatCard icon="time-outline" value={pending.length} label={t('alerts.pending')} iconBg={colors.warningSoft} valueColor={colors.warning} iconColor={colors.warning} /></View>
+          <View style={al.statHalf}><StatCard icon="checkmark-circle-outline" value={resolved.length} label={t('alerts.responded')} iconBg={colors.successSoft} valueColor={colors.success} iconColor={colors.success} /></View>
         </View>
 
         {loading ? (
           <View style={{ alignItems: 'center', padding: 40 }}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>Loading alerts...</Text>
+            <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 10 }}>{t('alerts.loading')}</Text>
           </View>
         ) : (
           <>
@@ -113,7 +115,7 @@ export default function AlertsScreen() {
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger }} />
-                  <Text style={{ fontWeight: '700', fontSize: 14, color: colors.danger }}>Pending Alerts - Action Required</Text>
+                  <Text style={{ fontWeight: '700', fontSize: 14, color: colors.danger }}>{t('alerts.pendingAction')}</Text>
                 </View>
                 {pending.map(alert => {
                   const sevBg = getSevStyle(alert.urgency, 'bg');
@@ -134,12 +136,12 @@ export default function AlertsScreen() {
                             <Text style={{ fontSize: 11, color: colors.textFaint }}>{new Date(alert.createdAt).toLocaleDateString()}</Text>
                           </View>
                           <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18, marginBottom: 10 }}>{alert.symptoms}</Text>
-                          <Text style={{ fontSize: 11, color: colors.textMuted, marginBottom: 10 }}>Recommended: {alert.specialistType}</Text>
+                            <Text style={{ fontSize: 11, color: colors.textMuted, marginBottom: 10 }}>{t('alerts.recommended')}: {alert.specialistType}</Text>
                           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                            <Button label="View Patient" onPress={() => router.push({ pathname: '/screens/PatientDetails', params: { id: alert.patientId } } as any)} size="sm" />
-                            <Button label="Send SMS" onPress={() => setShowSMS(alert)} size="sm" variant="success" />
-                            <Button label="Mark Responded" onPress={() => respondAlert(alert._id)} size="sm" variant="outline" />
-                            <Button label="Dismiss" onPress={() => dismissAlert(alert._id)} size="sm" variant="outline" />
+                            <Button label={t('alerts.viewPatient')} onPress={() => router.push({ pathname: '/screens/PatientDetails', params: { id: alert.patientId } } as any)} size="sm" />
+                            <Button label={t('alerts.sendSms')} onPress={() => setShowSMS(alert)} size="sm" variant="success" />
+                            <Button label={t('alerts.markResponded')} onPress={() => respondAlert(alert._id)} size="sm" variant="outline" />
+                            <Button label={t('alerts.dismiss')} onPress={() => dismissAlert(alert._id)} size="sm" variant="outline" />
                           </View>
                         </View>
                       </View>
@@ -153,8 +155,8 @@ export default function AlertsScreen() {
             {pending.length === 0 && (
               <View style={al.emptyBox}>
                 <Ionicons name="checkmark-circle" size={50} color={colors.success} style={{ marginBottom: 10 }} />
-                <Text style={{ fontWeight: '700', fontSize: 16, color: colors.success }}>All Caught Up!</Text>
-                <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>No pending alerts right now.</Text>
+                <Text style={{ fontWeight: '700', fontSize: 16, color: colors.success }}>{t('alerts.allCaughtUp')}</Text>
+                <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4 }}>{t('alerts.noPending')}</Text>
               </View>
             )}
 
@@ -163,7 +165,7 @@ export default function AlertsScreen() {
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20, marginBottom: 12 }}>
                   <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                  <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textMuted }}>Responded</Text>
+                  <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textMuted }}>{t('alerts.responded')}</Text>
                 </View>
                 <Card>
                   <View style={{ padding: 16 }}>
@@ -178,7 +180,7 @@ export default function AlertsScreen() {
                           <Text style={{ flex: 1, fontSize: 12, color: colors.textMuted }}>{a.symptoms.substring(0, 30)}...</Text>
                           <Badge label={a.urgency} type={badgeType} />
                           <TouchableOpacity onPress={() => dismissAlert(a._id)} style={{ marginLeft: 8 }} activeOpacity={0.7}>
-                            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600' }}>Dismiss</Text>
+                            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600' }}>{t('alerts.dismiss')}</Text>
                           </TouchableOpacity>
                         </View>
                       );
@@ -198,7 +200,7 @@ export default function AlertsScreen() {
             <View style={[al.modalHeader, { borderBottomColor: colors.border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="chatbox" size={18} color={colors.primary} />
-                <Text style={[al.modalTitle, { color: colors.textPrimary }]}>Send SMS via Twilio</Text>
+                <Text style={[al.modalTitle, { color: colors.textPrimary }]}>{t('alerts.sendSmsViaTwilio')}</Text>
               </View>
               <TouchableOpacity onPress={() => setShowSMS(null)} activeOpacity={0.7}>
                 <Ionicons name="close" size={20} color={colors.textFaint} />
@@ -207,21 +209,21 @@ export default function AlertsScreen() {
             <View style={{ padding: 16 }}>
               <View style={[al.recipientBox, { backgroundColor: colors.primarySoft }]}>
                 <Text style={{ fontSize: 13, color: colors.primary }}>
-                  To: <Text style={{ fontWeight: '700' }}>{showSMS?.patientName}</Text> - {showSMS?.patientPhone || 'N/A'}
+                  {t('alerts.to')}: <Text style={{ fontWeight: '700' }}>{showSMS?.patientName}</Text> - {showSMS?.patientPhone || 'N/A'}
                 </Text>
               </View>
-              <Text style={[al.label, { color: colors.textMuted }]}>Message</Text>
+              <Text style={[al.label, { color: colors.textMuted }]}>{t('alerts.message')}</Text>
               <TextInput
                 style={[al.input, { backgroundColor: colors.bgPage, borderColor: colors.border, color: colors.textPrimary }]}
-                placeholder="Type your message..."
+                placeholder={t('alerts.typeMessage')}
                 value={smsText}
                 onChangeText={setSmsText}
                 multiline
                 placeholderTextColor={colors.textFaint}
               />
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-                <Button label="Cancel" onPress={() => setShowSMS(null)} variant="outline" style={{ flex: 1 }} />
-                <Button label="Send via Twilio" onPress={sendSMS} style={{ flex: 1 }} />
+                <Button label={t('common.cancel')} onPress={() => setShowSMS(null)} variant="outline" style={{ flex: 1 }} />
+                <Button label={t('alerts.sendViaTwilio')} onPress={sendSMS} style={{ flex: 1 }} />
               </View>
             </View>
           </View>
