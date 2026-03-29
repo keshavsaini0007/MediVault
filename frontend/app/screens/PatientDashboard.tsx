@@ -47,6 +47,7 @@ interface Report {
 
 function MedRow({ med, onMarkTaken }: { med: DueDose; onMarkTaken: (med: DueDose) => void }) {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const scale = useRef(new Animated.Value(1)).current;
   const isDue = med.status === 'pending' || med.status === 'missed';
   const isOverdue = med.isOverdue && med.status === 'pending';
@@ -82,14 +83,14 @@ function MedRow({ med, onMarkTaken }: { med: DueDose; onMarkTaken: (med: DueDose
         </View>
         {isDue ? (
           <Button
-            label={med.status === 'missed' ? 'Retake' : 'Take'}
+            label={med.status === 'missed' ? t('med.action.retake') : t('med.action.take')}
             onPress={() => onMarkTaken(med)}
             size="sm"
             icon={isOverdue ? "refresh" : "checkmark"}
             pill
           />
         ) : (
-          <Badge label="Taken" type="success" icon="checkmark-circle" />
+          <Badge label={t('med.badge.taken')} type="success" icon="checkmark-circle" />
         )}
       </TouchableOpacity>
     </Animated.View>

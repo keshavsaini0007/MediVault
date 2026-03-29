@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavLayout from '@/components/BottomNavLayout';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useBadges } from '../../context/BadgeContext';
 import { Card, CardHeader, Button } from '../../components/UI';
 import { authAPI, User } from '../../services/api';
@@ -78,6 +79,7 @@ function PrefRow({
 /* ═══════════════════ DOCTOR PROFILE ═══════════════════════════════ */
 function DoctorProfile() {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const { doctorSettings, toggleDoctorSetting } = useBadges();
   const [tab, setTab] = useState<Tab>('profile');
@@ -292,6 +294,7 @@ function DoctorProfile() {
 /* ═══════════════════ PATIENT PROFILE ══════════════════════════════ */
 function PatientProfile() {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const { patientSettings, togglePatientSetting } = useBadges();
   const [tab, setTab] = useState<Tab>('profile');
@@ -448,10 +451,10 @@ function PatientProfile() {
   const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
   const tabs = [
-    { key: 'profile', label: 'Profile' },
-    { key: 'health', label: 'Health' },
-    { key: 'notifications', label: 'Notifs' },
-    { key: 'security', label: 'Security' },
+    { key: 'profile', label: t('profile.tab.profile') },
+    { key: 'health', label: t('profile.tab.health') },
+    { key: 'notifications', label: t('profile.tab.notifications') },
+    { key: 'security', label: t('profile.tab.security') },
   ];
 
   // Patient notification preference rows — key maps directly to PatientSettings
@@ -497,10 +500,10 @@ function PatientProfile() {
             </View>
             <View style={ph.statsRow}>
               {([
-                { icon: 'heart' as const, value: '--', label: 'Health' },
-                { icon: 'checkmark-circle' as const, value: '--%', label: 'Adherence' },
-                { icon: 'flame' as const, value: '0d', label: 'Streak' },
-                { icon: 'medical' as const, value: '0', label: 'Medicines' },
+                { icon: 'heart' as const, value: '--', label: t('profile.stats.health') },
+                { icon: 'checkmark-circle' as const, value: '--%', label: t('profile.stats.adherence') },
+                { icon: 'flame' as const, value: '0d', label: t('profile.stats.streak') },
+                { icon: 'medical' as const, value: '0', label: t('profile.stats.medicines') },
               ] as { icon: keyof typeof Ionicons.glyphMap; value: string; label: string }[]).map(({ icon, value, label }) => (
                 <View key={label} style={ph.statItem}>
                   <Ionicons name={icon} size={18} color="white" />
@@ -632,6 +635,7 @@ function PatientProfile() {
 /* ═══════════════════ ROOT EXPORT ═══════════════════════════════════ */
 export default function ProfileScreen() {
   const { role, colors } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const isDoctor = role === 'doctor';
   
@@ -645,8 +649,8 @@ export default function ProfileScreen() {
   
   return (
     <BottomNavLayout
-      title="Profile & Settings"
-      subtitle={isDoctor ? 'Doctor Account' : 'Patient Account'}
+      title={t('profile.title')}
+      subtitle={isDoctor ? t('profile.doctorAccount') : t('profile.patientAccount')}
       role={role}
       showBack
       onBack={handleBack}

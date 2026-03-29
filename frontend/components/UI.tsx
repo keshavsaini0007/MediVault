@@ -393,10 +393,10 @@ export function ColorIcon({ icon, color, bg, size = 40, filled = false }: ColorI
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: color,
-      shadowOpacity: 0.2,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 6,
-      elevation: 3,
+      shadowOpacity: 0,
+      shadowOffset: { width: 0, height: 0 },
+      shadowRadius: 0,
+      elevation: 0,
     }}>
       <Ionicons name={icon} size={size * 0.45} color={color} />
     </View>
