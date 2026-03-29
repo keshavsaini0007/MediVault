@@ -323,7 +323,7 @@ const ls = StyleSheet.create({
   logoText: { fontSize: 28, color: 'white', fontWeight: '800' },
   brand: { fontSize: 26, fontWeight: '900', letterSpacing: -0.5, color: 'white' },
   brandSub: { fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', marginTop: 4, color: 'rgba(255,255,255,0.7)' },
-  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5, marginTop: -30 },
+  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5, marginTop: 0 },
   subtitle: { fontSize: 13, marginBottom: 24, marginTop: 4 },
   langRow: { marginTop: -30, marginBottom: 16 },
   langLabel: { fontSize: 11, fontWeight: '700', marginBottom: 8 },
