@@ -266,7 +266,7 @@ function RoleButton({ role, label, selected, colors, onPress }: { role: Role; la
         <ColorIcon 
           icon={role === 'patient' ? 'person' : 'medkit'} 
           color={selected ? colors.primary : colors.textMuted} 
-          bg={selected ? colors.primary : colors.gray100} 
+          bg={selected ? colors.primary : colors.primarySoft} 
           size={40} 
         />
         <Text style={[ls.roleBtnText, { color: selected ? colors.primary : colors.textMuted }]}>
