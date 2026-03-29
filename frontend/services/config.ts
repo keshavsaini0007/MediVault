@@ -28,7 +28,7 @@ const DEV_ANDROID_EMULATOR_URL = 'http://10.0.2.2:5000/api/v1';
 // - Windows: Run `ipconfig` in terminal, look for IPv4 Address
 // - Mac/Linux: Run `ifconfig` or `ip addr`, look for inet address
 // - Example: http://192.168.1.100:5000/api/v1
-const DEV_LOCAL_NETWORK_URL = 'http://10.5.0.108:5000/api/v1'; // UPDATE THIS WITH YOUR IP
+const DEV_LOCAL_NETWORK_URL = 'http://10.5.0.12:5000/api/v1';
 
 /**
  * PRODUCTION CONFIGURATION
@@ -45,7 +45,7 @@ const PROD_API_URL = 'https://medivault-cxas.onrender.com/api/v1';
  * Set this to true if you're testing on a physical device (phone/tablet)
  * Set to false if using emulator/simulator or web browser
  */
-const USE_PHYSICAL_DEVICE = false;
+const USE_PHYSICAL_DEVICE = true;
 
 /**
  * Set this to true to use the production API even in development mode
@@ -94,7 +94,7 @@ export const API_BASE_URL = getApiBaseUrl();
  * Request timeout in milliseconds
  * Increase this if you have a slow network or backend
  */
-export const API_TIMEOUT_MS = 120000; // 2 minutes
+export const API_TIMEOUT_MS = 30000; // 30 seconds
 
 /**
  * Enable detailed API logging
