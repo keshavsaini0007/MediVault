@@ -45,7 +45,7 @@ const PROD_API_URL = 'https://medivault-cxas.onrender.com/api/v1';
  * Set this to true if you're testing on a physical device (phone/tablet)
  * Set to false if using emulator/simulator or web browser
  */
-const USE_PHYSICAL_DEVICE = true;
+const USE_PHYSICAL_DEVICE = false;
 
 /**
  * Set this to true to use the production API even in development mode

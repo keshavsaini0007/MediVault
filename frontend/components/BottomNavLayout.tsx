@@ -29,6 +29,7 @@ export default function BottomNavLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { colors, userName, isDark, toggleTheme } = useTheme();
+  const { notifCount } = useBadges();
   const insets = useSafeAreaInsets();
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -83,7 +84,19 @@ export default function BottomNavLayout({
           <View style={styles.headerRight}>
             {headerRight}
             <TouchableOpacity
-              style={[styles.themeToggle, { backgroundColor: isDark ? accent + '55' : 'rgba(255,255,255,0.15)' }]}
+              style={[styles.iconBtn, { backgroundColor: isDark ? accent + '55' : 'rgba(255,255,255,0.15)' }]}
+              onPress={() => router.push('/screens/Notifications')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="notifications-outline" size={18} color="white" />
+              {notifCount > 0 && (
+                <View style={styles.notifDot}>
+                  <Text style={styles.notifDotText}>{notifCount > 9 ? '9+' : notifCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: isDark ? accent + '55' : 'rgba(255,255,255,0.15)' }]}
               onPress={toggleTheme}
               activeOpacity={0.7}
             >
@@ -172,6 +185,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notifDotText: {
+    color: 'white',
+    fontSize: 9,
+    fontWeight: '800',
+  },
   avatar: {
     width: 36,
     height: 36,
@@ -179,13 +217,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-  },
-  themeToggle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   avatarText: {
     color: 'white',

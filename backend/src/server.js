@@ -14,7 +14,6 @@ try {
   process.exit(1);
 }
 
-connectDB();
 
 const authRoutes = require("./routes/auth");
 const doctorRoutes = require("./routes/doctor");
@@ -24,6 +23,7 @@ const symptomRoutes = require("./routes/symptom");
 const notificationRoutes = require("./routes/notification");
 const qrRoutes = require("./routes/qr");
 const messageRoutes = require("./routes/message");
+const { router: cronRouter } = require("./schedulers/missedDoseScheduler");
 
 const app = express();
 
@@ -89,6 +89,7 @@ app.use("/api/v1/symptom", symptomRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/qr", qrRoutes);
 app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/cron", cronRouter);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
