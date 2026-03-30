@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, RefreshControl, Platform,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
@@ -23,7 +23,7 @@ export default function ReportsScreen() {
   const [uploading, setUploading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedType, setSelectedType] = useState('Blood Test');
-  const [selectedFile, setSelectedFile] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<{ type: string; summary?: string } | null>(null);
 
   const fetchReports = useCallback(async (isRefresh = false) => {
@@ -51,19 +51,13 @@ export default function ReportsScreen() {
 
   const pickImage = async () => {
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(t('reports.alert.permissionTitle'), t('reports.alert.permissionBody'));
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: 0.8,
-        allowsEditing: false,
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        multiple: false,
+        copyToCacheDirectory: true,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result.canceled && result.assets?.[0]) {
         setSelectedFile(result.assets[0]);
         setShowSuccess(false);
         setUploadSuccess(null);
@@ -86,13 +80,16 @@ export default function ReportsScreen() {
     try {
       const formData = new FormData();
       const fileName =
-        selectedFile.fileName ||
-        `${selectedType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-      const mimeType = selectedFile.mimeType || 'image/jpeg';
+        selectedFile.name ||
+        `${selectedType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+      const mimeType =
+        selectedFile.mimeType ||
+        (fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
 
-      if (Platform.OS === 'web' && (selectedFile as ImagePicker.ImagePickerAsset & { file?: File }).file) {
-        const webFile = (selectedFile as ImagePicker.ImagePickerAsset & { file: File }).file;
-        formData.append('report', webFile, webFile.name || fileName);
+      if (Platform.OS === 'web') {
+        const blob = await fetch(selectedFile.uri).then((res) => res.blob());
+        const webFile = new File([blob], fileName, { type: mimeType });
+        formData.append('report', webFile);
       } else {
         formData.append('report', {
           uri: selectedFile.uri,
@@ -121,7 +118,10 @@ export default function ReportsScreen() {
   const handleViewReport = async (report: Report) => {
     if (report.fileUrl) {
       try {
-        await WebBrowser.openBrowserAsync(report.fileUrl);
+        const isPdf = report.mimeType === 'application/pdf';
+        const webPdfViewerUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(report.fileUrl)}`;
+
+        await WebBrowser.openBrowserAsync(Platform.OS === 'web' && isPdf ? webPdfViewerUrl : report.fileUrl);
       } catch (error) {
         Alert.alert(t('common.error'), t('reports.error.openFailed'));
       }
@@ -213,7 +213,7 @@ export default function ReportsScreen() {
                 <View style={{ alignItems: 'center' }}>
                   <IconBox icon="checkmark-circle" color={colors.success} bg={colors.successSoft} size={52} />
                   <Text style={[rp.dropText, { color: colors.textPrimary, marginTop: 10 }]}>{t('reports.fileSelected')}</Text>
-                  <Text style={[rp.dropSub, { color: colors.textFaint }]}>{selectedFile.fileName || t('reports.defaultImageName')}</Text>
+                  <Text style={[rp.dropSub, { color: colors.textFaint }]}>{selectedFile.name || t('reports.defaultImageName')}</Text>
                   <TouchableOpacity onPress={() => setSelectedFile(null)} style={[rp.removeBtn, { backgroundColor: colors.dangerSoft }]} activeOpacity={0.7}>
                     <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '600' }}>{t('reports.action.remove')}</Text>
                   </TouchableOpacity>

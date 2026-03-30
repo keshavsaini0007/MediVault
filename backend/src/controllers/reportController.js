@@ -5,7 +5,10 @@ const {
   cloudinary,
   uploadBufferToCloudinary,
 } = require("../config/cloudinary");
-const { extractTextFromImageBuffer } = require("../services/ocrService");
+const {
+  extractTextFromImageBuffer,
+  extractTextFromPdfBuffer,
+} = require("../services/ocrService");
 
 const getMyReports = async (req, res, next) => {
   try {
@@ -46,21 +49,47 @@ const uploadMyReport = async (req, res, next) => {
     }
 
     const reportType = req.body.reportType || "Other";
+    const originalName = (req.file.originalname || "").toLowerCase();
+    const isPdf =
+      req.file.mimetype === "application/pdf" || originalName.endsWith(".pdf");
 
     const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
       public_id: `${req.user.id}_${Date.now()}`,
+      resource_type: isPdf ? "raw" : "auto",
     });
+
+    const deliveredFileUrl = uploadResult.secure_url;
 
     let ocrText = "";
     let ocrConfidence = null;
+    let ocrReason = null;
 
     if (req.file.mimetype.startsWith("image/")) {
       try {
         const ocrResult = await extractTextFromImageBuffer(req.file.buffer);
         ocrText = ocrResult.text;
         ocrConfidence = ocrResult.confidence;
+        if (!ocrText) {
+          ocrReason = "No readable text found in image.";
+        }
       } catch (ocrError) {
         console.error("Tesseract OCR failed:", ocrError.message);
+        ocrConfidence = 0;
+        ocrReason = ocrError.message;
+      }
+    } else if (isPdf) {
+      try {
+        const ocrResult = await extractTextFromPdfBuffer(req.file.buffer);
+        ocrText = ocrResult.text;
+        ocrConfidence = ocrResult.confidence;
+        if (!ocrText) {
+          ocrReason =
+            "PDF has no selectable text (likely scanned). Text extraction returned empty.";
+        }
+      } catch (ocrError) {
+        console.error("PDF text extraction failed:", ocrError.message);
+        ocrConfidence = 0;
+        ocrReason = ocrError.message;
       }
     }
 
@@ -68,9 +97,9 @@ const uploadMyReport = async (req, res, next) => {
       patientId: req.user.id,
       reportType,
       originalName: req.file.originalname,
-      mimeType: req.file.mimetype,
+      mimeType: isPdf ? "application/pdf" : req.file.mimetype,
       size: req.file.size,
-      fileUrl: uploadResult.secure_url,
+      fileUrl: deliveredFileUrl,
       cloudinaryPublicId: uploadResult.public_id,
       cloudinaryResourceType: uploadResult.resource_type,
       aiSummary: "",
@@ -84,6 +113,7 @@ const uploadMyReport = async (req, res, next) => {
       ocr: {
         extracted: Boolean(ocrText),
         confidence: ocrConfidence,
+        reason: ocrReason,
       },
     });
   } catch (error) {
