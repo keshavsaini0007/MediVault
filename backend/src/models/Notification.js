@@ -10,7 +10,7 @@ const notificationSchema = new mongoose.Schema(
 		},
 		type: {
 			type: String,
-			enum: ["dose_missed", "symptom_urgent", "system"],
+			enum: ["dose_missed", "dose_missed_caregiver", "dose_daily_summary", "symptom_urgent", "system"],
 			required: true,
 		},
 		title: {

@@ -218,8 +218,8 @@ const validateNotificationsQuery = [
     .withMessage("isRead must be a boolean."),
   query("type")
     .optional({ values: "falsy" })
-    .isIn(["dose_missed", "symptom_urgent", "system"])
-    .withMessage("type must be one of dose_missed, symptom_urgent, or system."),
+    .isIn(["dose_missed", "dose_missed_caregiver", "dose_daily_summary", "symptom_urgent", "system"])
+    .withMessage("type must be one of dose_missed, dose_missed_caregiver, dose_daily_summary, symptom_urgent, or system."),
   query("from")
     .optional({ values: "falsy" })
     .isISO8601()

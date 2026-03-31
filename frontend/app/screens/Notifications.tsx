@@ -79,13 +79,15 @@ export default function NotificationsScreen() {
 
   const filters = isDoctor
     ? ['all', 'unread', 'critical', 'report']
-    : ['all', 'unread', 'medicine', 'message'];
+    : ['all', 'unread', 'medicine', 'message', 'daily_summary'];
 
   const getFilterType = (n: Notification) => {
-    if (n.type === 'dose_missed' || n.type === 'Medicine') return 'medicine';
-    if (n.type === 'symptom_urgent' || n.type === 'Critical') return 'critical';
-    if (n.type === 'Report') return 'report';
-    if (n.type === 'Message') return 'message';
+    const type = n.type as string;
+    if (type === 'dose_missed' || type === 'dose_missed_caregiver' || type === 'Medicine') return 'medicine';
+    if (type === 'dose_daily_summary') return 'daily_summary';
+    if (type === 'symptom_urgent' || type === 'Critical') return 'critical';
+    if (type === 'Report') return 'report';
+    if (type === 'Message') return 'message';
     return 'all';
   };
 
@@ -96,7 +98,8 @@ export default function NotificationsScreen() {
   });
 
   const getNotifIcon = (type: string): keyof typeof Ionicons.glyphMap => {
-    if (type === 'dose_missed') return 'medical-outline';
+    if (type === 'dose_missed' || type === 'dose_missed_caregiver') return 'medical-outline';
+    if (type === 'dose_daily_summary') return 'calendar-outline';
     if (type === 'symptom_urgent') return 'alert-circle-outline';
     return 'notifications-outline';
   };
@@ -194,8 +197,12 @@ export default function NotificationsScreen() {
             </View>
           ) : (
             displayed.map(n => {
-              const typeIcon = getNotifIcon(n.type);
-              const typeTag = n.type === 'dose_missed' ? 'Medicine' : n.type === 'symptom_urgent' ? 'Critical' : 'System';
+              const type = n.type as string;
+              const typeIcon = getNotifIcon(type);
+              const typeTag = type === 'dose_missed' || type === 'dose_missed_caregiver' ? 'Medicine' 
+                : type === 'dose_daily_summary' ? 'Adherence'
+                : type === 'symptom_urgent' ? 'Critical' : 'System';
+              const tagColor = type === 'dose_daily_summary' ? 'warning' : TAG_COLORS[typeTag] || 'default';
               return (
                 <View key={n._id} style={[s.card, {
                   backgroundColor: n.isRead
@@ -220,7 +227,7 @@ export default function NotificationsScreen() {
                         color: n.isRead ? colors.textMuted : colors.textPrimary,
                         fontWeight: n.isRead ? '500' : '700',
                       }]} numberOfLines={1}>{n.title}</Text>
-                      <Badge label={typeTag} type={TAG_COLORS[typeTag] || 'primary'} />
+                      <Badge label={typeTag} type={tagColor} />
                     </View>
                     <Text style={[s.notifBody, { color: n.isRead ? colors.textFaint : colors.textMuted }]}
                       numberOfLines={2}>{n.message}</Text>

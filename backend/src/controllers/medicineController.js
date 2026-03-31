@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Medicine = require("../models/Medicine");
 const DoseLog = require("../models/DoseLog");
 const Notification = require("../models/Notification");
+const streakService = require("../services/streakService");
 
 const parseScheduledTime = (value) => {
 	if (!value) {
@@ -59,6 +60,13 @@ const upsertDoseLog = async ({ patientId, medicineId, status, scheduledTime }) =
 		const becameMissed = existingLog.status !== "missed" && status === "missed";
 		existingLog.status = status;
 		existingLog.loggedAt = new Date();
+
+		if (status === "missed" && becameMissed) {
+			await streakService.updateStreakOnMiss(patientId, medicine._id, existingLog);
+		} else if (status === "taken") {
+			await streakService.resetStreakOnTaken(patientId, medicine._id, existingLog);
+		}
+
 		await existingLog.save();
 		return { doseLog: existingLog, updated: true, becameMissed, medicine };
 	}
@@ -69,6 +77,12 @@ const upsertDoseLog = async ({ patientId, medicineId, status, scheduledTime }) =
 		status,
 		scheduledTime: normalizedScheduledTime,
 	});
+
+	if (status === "missed") {
+		await streakService.updateStreakOnMiss(patientId, medicine._id, createdLog);
+	} else if (status === "taken") {
+		await streakService.resetStreakOnTaken(patientId, medicine._id, createdLog);
+	}
 
 	return {
 		doseLog: createdLog,

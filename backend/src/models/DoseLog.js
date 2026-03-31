@@ -24,6 +24,10 @@ const doseLogSchema = new mongoose.Schema(
 			enum: ["taken", "missed"],
 			required: true,
 		},
+		consecutiveMissCount: {
+			type: Number,
+			default: 0,
+		},
 		loggedAt: {
 			type: Date,
 			default: Date.now,

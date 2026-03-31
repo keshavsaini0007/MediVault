@@ -3,6 +3,7 @@ const express = require('express');
 const Medicine = require('../models/Medicine');
 const DoseLog = require('../models/DoseLog');
 const Notification = require('../models/Notification');
+const streakService = require('../services/streakService');
 
 const router = express.Router();
 
@@ -73,13 +74,22 @@ const checkMissedDoses = async () => {
 
 				if (!existingLog || existingLog.status !== 'taken') {
 					if (!existingLog) {
-						await DoseLog.create({
+						const newDoseLog = await DoseLog.create({
 							medicineId: medicine._id,
 							patientId: medicine.patientId,
 							scheduledTime: scheduledDate,
 							status: 'missed',
 						});
 						missedCount++;
+
+						await streakService.updateStreakOnMiss(medicine.patientId, medicine._id, newDoseLog);
+					} else if (existingLog.status !== 'missed') {
+						existingLog.status = 'missed';
+						existingLog.loggedAt = new Date();
+						await existingLog.save();
+						missedCount++;
+
+						await streakService.updateStreakOnMiss(medicine.patientId, medicine._id, existingLog);
 					}
 
 					const existingNotification = await Notification.findOne({

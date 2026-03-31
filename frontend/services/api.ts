@@ -125,7 +125,7 @@ export interface SymptomLog {
 export interface Notification {
   _id: string;
   userId: string;
-  type: "dose_missed" | "symptom_urgent" | "system";
+  type: "dose_missed" | "dose_missed_caregiver" | "dose_daily_summary" | "symptom_urgent" | "system";
   title: string;
   message: string;
   metadata?: Record<string, unknown>;
