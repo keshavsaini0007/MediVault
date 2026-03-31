@@ -9,6 +9,29 @@ import {
 
 const TOKEN_KEY = "authToken";
 const USER_KEY = "userData";
+const DEMO_KEY = "isDemoUser";
+
+// Check if in demo mode
+const isDemoMode = async (): Promise<boolean> => {
+  try {
+    const val = await AsyncStorage.getItem(DEMO_KEY);
+    return val === "true";
+  } catch {
+    return false;
+  }
+};
+
+const setDemoMode = async (isDemo: boolean): Promise<void> => {
+  try {
+    if (isDemo) {
+      await AsyncStorage.setItem(DEMO_KEY, "true");
+    } else {
+      await AsyncStorage.removeItem(DEMO_KEY);
+    }
+  } catch (error) {
+    console.error("Error setting demo mode:", error);
+  }
+};
 
 // Use centralized configuration
 const BASE_URL = API_BASE_URL;
@@ -166,7 +189,7 @@ const setToken = async (token: string): Promise<void> => {
 
 const clearToken = async (): Promise<void> => {
   try {
-    await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+    await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY, DEMO_KEY]);
   } catch (error) {
     console.error("Error clearing token:", error);
   }
@@ -189,6 +212,160 @@ const setUserData = async (user: User): Promise<void> => {
   }
 };
 
+const getMockResponse = (endpoint: string): { ok: boolean; status: number; data: Record<string, unknown> } => {
+  // Patient endpoints
+  if (endpoint === '/patient/dashboard') {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        summary: {
+          activeMedicines: 5,
+          scheduledDosesToday: 4,
+          takenToday: 2,
+          missedToday: 0,
+          pendingToday: 2,
+          adherencePercent: 75,
+          unreadNotifications: 3,
+          recentRecordsCount: 12,
+        },
+        recentSymptoms: [],
+        recentReports: [],
+      },
+    };
+  }
+  if (endpoint === '/medicine/due') {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        summary: { total: 4, taken: 2, missed: 0, pending: 2, overdue: 0 },
+        dueDoses: [
+          { medicineId: '1', medicineName: 'Aspirin', dosage: '100mg', slot: 'Morning', scheduledTime: '08:00', status: 'taken', isOverdue: false },
+          { medicineId: '2', medicineName: 'Metformin', dosage: '500mg', slot: 'Morning', scheduledTime: '08:00', status: 'pending', isOverdue: false },
+          { medicineId: '3', medicineName: 'Vitamin D', dosage: '1000 IU', slot: 'Evening', scheduledTime: '20:00', status: 'pending', isOverdue: false },
+        ],
+      },
+    };
+  }
+  if (endpoint === '/medicine/adherence/weekly') {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        trend: Array.from({ length: 7 }, (_, i) => ({
+          date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toISOString(),
+          total: 4,
+          taken: Math.floor(Math.random() * 4),
+          missed: 0,
+          adherencePercent: Math.floor(Math.random() * 30) + 70,
+        })),
+      },
+    };
+  }
+  if (endpoint === '/patient/reports') {
+    return { ok: true, status: 200, data: { reports: [] } };
+  }
+  if (endpoint === '/patient/records') {
+    return { ok: true, status: 200, data: { records: [] } };
+  }
+  
+  // Doctor endpoints
+  if (endpoint === '/doctor/dashboard') {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        summary: {
+          assignedPatients: 12,
+          highUrgencyPatients: 2,
+          mediumUrgencyPatients: 3,
+          missedDosesLast24h: 1,
+          unreadNotifications: 5,
+          recentRecordsCount: 8,
+        },
+        patients: [],
+        recentSymptoms: [],
+        recentReports: [],
+      },
+    };
+  }
+  if (endpoint === '/doctor/patients') {
+    return { ok: true, status: 200, data: { count: 3, patients: [] } };
+  }
+  
+  // Common endpoints
+  if (endpoint === '/notifications') {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        notifications: [],
+        pagination: { total: 0, page: 1, limit: 20, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+      },
+    };
+  }
+  if (endpoint === '/notifications/unread-count') {
+    return { ok: true, status: 200, data: { unreadCount: 0, unreadByType: {} } };
+  }
+  if (endpoint === '/medicine') {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        medicines: [
+          {
+            _id: '1',
+            name: 'Aspirin',
+            medicineName: 'Aspirin',
+            dosage: '100mg',
+            frequency: 'Once daily',
+            timeSlots: ['Morning'],
+            startDate: new Date().toISOString(),
+            isActive: true,
+          },
+          {
+            _id: '2',
+            name: 'Metformin',
+            medicineName: 'Metformin',
+            dosage: '500mg',
+            frequency: 'Twice daily',
+            timeSlots: ['Morning', 'Evening'],
+            startDate: new Date().toISOString(),
+            isActive: true,
+          },
+          {
+            _id: '3',
+            name: 'Vitamin D',
+            medicineName: 'Vitamin D',
+            dosage: '1000 IU',
+            frequency: 'Once daily',
+            timeSlots: ['Morning'],
+            startDate: new Date().toISOString(),
+            isActive: true,
+          },
+        ],
+      },
+    };
+  }
+  if (endpoint.startsWith('/medicine/adherence')) {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        summary: [
+          { medicineId: '1', total: 30, taken: 25, missed: 5, adherencePercent: 83 },
+          { medicineId: '2', total: 30, taken: 28, missed: 2, adherencePercent: 93 },
+          { medicineId: '3', total: 30, taken: 22, missed: 8, adherencePercent: 73 },
+        ],
+      },
+    };
+  }
+  
+  // Default: return success
+  return { ok: true, status: 200, data: {} };
+};
+
 const apiCall = async (
   endpoint: string,
   options: RequestInit = {},
@@ -202,7 +379,13 @@ const apiCall = async (
     ...((options.headers as Record<string, string>) || {}),
   };
 
+  // Check for demo mode before API call
   if (requiresAuth) {
+    const isDemo = await isDemoMode();
+    if (isDemo) {
+      // Return mock data based on endpoint for demo mode
+      return getMockResponse(endpoint);
+    }
     const token = await getToken();
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -1215,4 +1398,4 @@ export const qrAPI = {
   },
 };
 
-export { getToken, setToken, clearToken, getUserData, setUserData, BASE_URL };
+export { getToken, setToken, clearToken, getUserData, setUserData, setDemoMode, BASE_URL, isDemoMode };

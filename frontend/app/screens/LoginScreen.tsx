@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, ColorIcon } from '../../components/UI';
 import { useTheme } from '../../context/ThemeContext';
 import { supportedLanguages, useLanguage } from '../../context/LanguageContext';
-import { authAPI } from '../../services/api';
+import { authAPI, setDemoMode, User } from '../../services/api';
 
 type Role = 'patient' | 'doctor';
 type LoginMode = 'email' | 'mobile' | 'username' | 'hospitalId';
@@ -96,8 +96,16 @@ export default function LoginScreen() {
         { text: t('common.cancel'), style: 'cancel' },
         {
           text: t('login.demo.continue'),
-          onPress: () => {
-            setUser(demoRole, demoRole === 'doctor' ? 'Dr. Demo User' : 'Demo Patient');
+          onPress: async () => {
+            const demoUser: User = {
+              name: demoRole === 'doctor' ? 'Dr. Demo User' : 'Demo Patient',
+              email: demoRole === 'doctor' ? 'demo@hospital.com' : 'demo@patient.com',
+              role: demoRole,
+              bloodType: 'O+',
+              allergies: [],
+            };
+            await setDemoMode(true);
+            setUser(demoRole, demoUser.name, demoUser);
             router.replace(demoRole === 'doctor' ? '/screens/DoctorDashboard' : '/screens/PatientDashboard');
           },
         },

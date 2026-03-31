@@ -23,12 +23,13 @@ const DEV_LOCALHOST_URL = 'http://localhost:5000/api/v1';
 // For Android Emulator (special IP that maps to host machine's localhost)
 const DEV_ANDROID_EMULATOR_URL = 'http://10.0.2.2:5000/api/v1';
 
-// For Physical Devices on Same WiFi Network
-// Find your computer's local IP:
-// - Windows: Run `ipconfig` in terminal, look for IPv4 Address
-// - Mac/Linux: Run `ifconfig` or `ip addr`, look for inet address
-// - Example: http://192.168.1.100:5000/api/v1
-const DEV_LOCAL_NETWORK_URL = 'http://10.5.0.12:5000/api/v1';
+// For Physical Devices on Same WiFi Network (Mobile/Expo Go)
+// IMPORTANT: Replace with your computer's actual local IP address
+// Windows: Run `ipconfig` in cmd, look for "IPv4 Address" under your WiFi adapter
+// Mac/Linux: Run `ifconfig` or `ip addr`, look for "inet" address
+// Example: If your IP is 192.168.1.100, use: 'http://192.168.1.100:5000/api/v1'
+// Current value matches your network - update if needed
+const DEV_LOCAL_NETWORK_URL = 'http://10.5.0.228:5000/api/v1';
 
 /**
  * PRODUCTION CONFIGURATION
@@ -44,6 +45,9 @@ const PROD_API_URL = 'https://medivault-cxas.onrender.com/api/v1';
 /**
  * Set this to true if you're testing on a physical device (phone/tablet)
  * Set to false if using emulator/simulator or web browser
+ * 
+ * IMPORTANT: For Expo Go on mobile, set this to true and ensure your phone
+ * and computer are on the same WiFi network
  */
 const USE_PHYSICAL_DEVICE = true;
 
@@ -69,17 +73,14 @@ export const getApiBaseUrl = (): string => {
     return PROD_API_URL;
   }
 
-  // Development mode - choose based on platform and device type
+  // Use local network URL for physical devices (mobile/Expo Go)
+  // Set USE_PHYSICAL_DEVICE = true in config when testing on phone
   if (USE_PHYSICAL_DEVICE) {
     console.log('📱 Using LOCAL NETWORK URL for physical device:', DEV_LOCAL_NETWORK_URL);
     return DEV_LOCAL_NETWORK_URL;
   }
 
-  if (Platform.OS === 'android') {
-    console.log('🤖 Using ANDROID EMULATOR URL:', DEV_ANDROID_EMULATOR_URL);
-    return DEV_ANDROID_EMULATOR_URL;
-  }
-
+  // Default to localhost for web browser
   console.log('💻 Using LOCALHOST URL:', DEV_LOCALHOST_URL);
   return DEV_LOCALHOST_URL;
 };
@@ -93,8 +94,9 @@ export const API_BASE_URL = getApiBaseUrl();
 /**
  * Request timeout in milliseconds
  * Increase this if you have a slow network or backend
+ * Mobile/Expo Go may need longer timeout
  */
-export const API_TIMEOUT_MS = 30000; // 30 seconds
+export const API_TIMEOUT_MS = 10000; // 10 seconds
 
 /**
  * Enable detailed API logging

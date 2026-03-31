@@ -178,7 +178,7 @@ export default function TimelineScreen() {
               ]}
             >
               <Text style={[st.filterText, { color: active ? meta.color : colors.textMuted }]}>
-                {t === 'All' ? t('timeline.allEvents') : meta.label}
+                {t === 'All' ? ('timeline.allEvents') : meta.label}
               </Text>
             </TouchableOpacity>
           );

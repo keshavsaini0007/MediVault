@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, RefreshControl,
+  ActivityIndicator, Alert, RefreshControl, Platform,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
@@ -23,7 +23,7 @@ export default function ReportsScreen() {
   const [uploading, setUploading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedType, setSelectedType] = useState('Blood Test');
-  const [selectedFile, setSelectedFile] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<{ type: string; summary?: string } | null>(null);
 
   const fetchReports = useCallback(async (isRefresh = false) => {
@@ -51,19 +51,13 @@ export default function ReportsScreen() {
 
   const pickImage = async () => {
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(t('reports.alert.permissionTitle'), t('reports.alert.permissionBody'));
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: 0.8,
-        allowsEditing: false,
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        multiple: false,
+        copyToCacheDirectory: true,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result.canceled && result.assets?.[0]) {
         setSelectedFile(result.assets[0]);
         setShowSuccess(false);
         setUploadSuccess(null);
@@ -85,11 +79,25 @@ export default function ReportsScreen() {
 
     try {
       const formData = new FormData();
-      formData.append('report', {
-        uri: selectedFile.uri,
-        type: selectedFile.mimeType || 'image/jpeg',
-        name: selectedFile.fileName || `${selectedType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.jpg`,
-      } as unknown as Blob);
+      const fileName =
+        selectedFile.name ||
+        `${selectedType.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+      const mimeType =
+        selectedFile.mimeType ||
+        (fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+
+      if (Platform.OS === 'web') {
+        const blob = await fetch(selectedFile.uri).then((res) => res.blob());
+        const webFile = new File([blob], fileName, { type: mimeType });
+        formData.append('report', webFile);
+      } else {
+        formData.append('report', {
+          uri: selectedFile.uri,
+          type: mimeType,
+          name: fileName,
+        } as unknown as Blob);
+      }
+
       formData.append('reportType', selectedType);
 
       const newReport = await patientAPI.uploadReport(formData);
@@ -110,7 +118,10 @@ export default function ReportsScreen() {
   const handleViewReport = async (report: Report) => {
     if (report.fileUrl) {
       try {
-        await WebBrowser.openBrowserAsync(report.fileUrl);
+        const isPdf = report.mimeType === 'application/pdf';
+        const webPdfViewerUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(report.fileUrl)}`;
+
+        await WebBrowser.openBrowserAsync(Platform.OS === 'web' && isPdf ? webPdfViewerUrl : report.fileUrl);
       } catch (error) {
         Alert.alert(t('common.error'), t('reports.error.openFailed'));
       }
@@ -202,7 +213,7 @@ export default function ReportsScreen() {
                 <View style={{ alignItems: 'center' }}>
                   <IconBox icon="checkmark-circle" color={colors.success} bg={colors.successSoft} size={52} />
                   <Text style={[rp.dropText, { color: colors.textPrimary, marginTop: 10 }]}>{t('reports.fileSelected')}</Text>
-                  <Text style={[rp.dropSub, { color: colors.textFaint }]}>{selectedFile.fileName || t('reports.defaultImageName')}</Text>
+                  <Text style={[rp.dropSub, { color: colors.textFaint }]}>{selectedFile.name || t('reports.defaultImageName')}</Text>
                   <TouchableOpacity onPress={() => setSelectedFile(null)} style={[rp.removeBtn, { backgroundColor: colors.dangerSoft }]} activeOpacity={0.7}>
                     <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '600' }}>{t('reports.action.remove')}</Text>
                   </TouchableOpacity>
@@ -287,18 +298,29 @@ export default function ReportsScreen() {
               reports.map((r, i) => (
                 <View key={r._id} style={[rp.reportItem, i < reports.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderSoft }]}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
                       <IconBox icon={getReportIcon(r.reportType)} color={colors.teal} bg={colors.tealSoft} size={46} />
-                      <View>
+                      <View style={{ flex: 1 }}>
                         <Text style={{ fontWeight: '700', fontSize: 14, color: colors.textPrimary }}>{r.reportType}</Text>
                         <Text style={{ fontSize: 12, color: colors.textFaint, marginTop: 3 }}>
                           {formatDate(r.createdAt)} - {formatFileSize(r.size)}
                         </Text>
-                        <Text style={{ fontSize: 11, color: colors.textFaint }} numberOfLines={1}>
+                        <Text style={{ fontSize: 11, color: colors.textFaint }} numberOfLines={1} ellipsizeMode="middle">
                           {r.originalName}
                         </Text>
                       </View>
                     </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {r.aiSummary && (
+                      <View style={[rp.aiBox, { backgroundColor: colors.bgPage, borderLeftColor: colors.teal, flex: 1, marginRight: 12 }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <Ionicons name="bulb-outline" size={16} color={colors.teal} />
+                          <Text style={[rp.aiLabel, { color: colors.teal }]}>{t('reports.aiSummary')}</Text>
+                        </View>
+                        <Text style={[rp.aiText, { color: colors.textMuted }]} numberOfLines={2}>{r.aiSummary}</Text>
+                      </View>
+                    )}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                       <TouchableOpacity onPress={() => handleDeleteReport(r._id)} activeOpacity={0.7}>
                         <Ionicons name="trash-outline" size={20} color={colors.danger} />
@@ -306,15 +328,6 @@ export default function ReportsScreen() {
                       <Button label={t('common.view')} onPress={() => handleViewReport(r)} size="sm" />
                     </View>
                   </View>
-                  {r.aiSummary && (
-                    <View style={[rp.aiBox, { backgroundColor: colors.bgPage, borderLeftColor: colors.teal }]}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <Ionicons name="bulb-outline" size={16} color={colors.teal} />
-                        <Text style={[rp.aiLabel, { color: colors.teal }]}>{t('reports.aiSummary')}</Text>
-                      </View>
-                      <Text style={[rp.aiText, { color: colors.textMuted }]}>{r.aiSummary}</Text>
-                    </View>
-                  )}
                 </View>
               ))
             )}

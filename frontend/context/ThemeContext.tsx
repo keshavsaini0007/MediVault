@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import Colors, { DarkColors } from '../constants/colors';
-import { getUserData, authAPI, User } from '../services/api';
+import { getUserData, authAPI, User, isDemoMode, clearToken } from '../services/api';
 
 type ThemeColors = typeof Colors;
 export type UserRole = 'patient' | 'doctor';
@@ -64,7 +64,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await authAPI.logout();
+      const isDemo = await isDemoMode();
+      if (isDemo) {
+        await clearToken();
+      } else {
+        await authAPI.logout();
+      }
     } catch (error) {
       console.error('Logout error:', error);
     }
