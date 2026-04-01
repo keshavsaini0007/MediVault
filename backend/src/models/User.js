@@ -62,6 +62,21 @@ const userSchema = new mongoose.Schema({
         name: String,
         phone: String   
     },
+    caregiver: {
+        name: {
+            type: String,
+            trim: true,
+        },
+        email: {
+            type: String,
+            trim: true,
+            lowercase: true,
+        },
+        phone: {
+            type: String,
+            trim: true,
+        },
+    },
     assignedDoctorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

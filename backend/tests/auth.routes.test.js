@@ -71,6 +71,44 @@ describe("Auth routes", () => {
     expect(register).toHaveBeenCalledTimes(1);
   });
 
+  test("POST /register validates patient caregiver fields", async () => {
+    const app = buildApp();
+
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .send({
+        firstName: "Jane",
+        lastName: "Doe",
+        email: "jane@example.com",
+        password: "Pass@123",
+        role: "patient",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Validation failed.");
+    expect(register).not.toHaveBeenCalled();
+  });
+
+  test("POST /register accepts valid patient payload with caregiver", async () => {
+    const app = buildApp();
+
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .send({
+        firstName: "Jane",
+        lastName: "Doe",
+        email: "jane@example.com",
+        password: "Pass@123",
+        role: "patient",
+        caregiverName: "Ravi Doe",
+        caregiverEmail: "ravi@example.com",
+        caregiverPhone: "+15555551212",
+      });
+
+    expect(res.status).toBe(201);
+    expect(register).toHaveBeenCalledTimes(1);
+  });
+
   test("POST /login requires password", async () => {
     const app = buildApp();
 

@@ -29,7 +29,7 @@ const DEV_ANDROID_EMULATOR_URL = 'http://10.5.1.152:5000/api/v1';
 // Mac/Linux: Run `ifconfig` or `ip addr`, look for "inet" address
 // Example: If your IP is 192.168.1.100, use: 'http://192.168.1.100:5000/api/v1'
 // Current value matches your network - update if needed
-const DEV_LOCAL_NETWORK_URL = 'http://10.5.0.228:5000/api/v1';
+const DEV_LOCAL_NETWORK_URL = "http://10.5.0.34/api/v1";
 
 /**
  * PRODUCTION CONFIGURATION
@@ -49,7 +49,7 @@ const PROD_API_URL = 'https://medivault-cxas.onrender.com/api/v1';
  * IMPORTANT: For Expo Go on mobile, set this to true and ensure your phone
  * and computer are on the same WiFi network
  */
-const USE_PHYSICAL_DEVICE = false;
+const USE_PHYSICAL_DEVICE = true;
 
 /**
  * Set this to true to use the production API even in development mode
