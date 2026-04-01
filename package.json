@@ -2,9 +2,9 @@
   "name": "mediVaultApp",
   "main": "expo-router/entry",
   "version": "1.0.0",
-    "engines": {
-  "node": "20.x"
-},
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -17,6 +17,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "^54.0.0",
     "expo-asset": "~12.0.12",
+    "expo-blur": "^55.0.10",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
     "expo-font": "~14.0.0",

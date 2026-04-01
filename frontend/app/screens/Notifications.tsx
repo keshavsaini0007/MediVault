@@ -82,10 +82,8 @@ export default function NotificationsScreen() {
     : ['all', 'unread', 'medicine', 'message'];
 
   const getFilterType = (n: Notification) => {
-    if (n.type === 'dose_missed' || n.type === 'Medicine') return 'medicine';
-    if (n.type === 'symptom_urgent' || n.type === 'Critical') return 'critical';
-    if (n.type === 'Report') return 'report';
-    if (n.type === 'Message') return 'message';
+    if (n.type === 'dose_missed') return 'medicine';
+    if (n.type === 'symptom_urgent') return 'critical';
     return 'all';
   };
 
