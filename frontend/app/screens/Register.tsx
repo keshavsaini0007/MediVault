@@ -40,6 +40,11 @@ export default function RegisterScreen() {
   const [spec, setSpec] = useState("General Physician");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  
+  // Caregiver fields (required for patients)
+  const [caregiverName, setCaregiverName] = useState("");
+  const [caregiverEmail, setCaregiverEmail] = useState("");
+  const [caregiverPhone, setCaregiverPhone] = useState("");
 
   // Clear validation errors when step or role changes
   React.useEffect(() => {
@@ -71,6 +76,16 @@ export default function RegisterScreen() {
         t("register.alert.hospitalIdRequired"),
       );
       return;
+    }
+    // For patients, require caregiver info
+    if (role === "patient") {
+      if (!caregiverName.trim() || !caregiverEmail.trim() || !caregiverPhone.trim()) {
+        Alert.alert(
+          t("register.alert.errorTitle"),
+          "Caregiver name, email, and phone are required for patient registration.",
+        );
+        return;
+      }
     }
     setValidationErrors([]);
     setStep(3);
@@ -129,6 +144,10 @@ export default function RegisterScreen() {
             .map((a) => a.trim())
             .filter(Boolean);
         }
+        // Caregiver info required for patients
+        if (caregiverName.trim()) registerData.caregiverName = caregiverName.trim();
+        if (caregiverEmail.trim()) registerData.caregiverEmail = caregiverEmail.trim();
+        if (caregiverPhone.trim()) registerData.caregiverPhone = caregiverPhone.trim();
       }
 
       const result = await authAPI.register(registerData);
@@ -452,6 +471,71 @@ export default function RegisterScreen() {
                 />
               </View>
             )}
+            {/* Caregiver fields for patients - in Step 2 */}
+            {role === "patient" && (
+              <>
+                <View style={rg.inputGroup}>
+                  <Text style={[rg.label, { color: colors.textMuted }]}>
+                    Caregiver Name *
+                  </Text>
+                  <TextInput
+                    style={[
+                      rg.input,
+                      {
+                        backgroundColor: colors.bgCard,
+                        borderColor: colors.border,
+                        color: colors.textPrimary,
+                      },
+                    ]}
+                    placeholder="Primary caregiver name"
+                    value={caregiverName}
+                    onChangeText={setCaregiverName}
+                    placeholderTextColor={colors.textFaint}
+                  />
+                </View>
+                <View style={rg.inputGroup}>
+                  <Text style={[rg.label, { color: colors.textMuted }]}>
+                    Caregiver Email *
+                  </Text>
+                  <TextInput
+                    style={[
+                      rg.input,
+                      {
+                        backgroundColor: colors.bgCard,
+                        borderColor: colors.border,
+                        color: colors.textPrimary,
+                      },
+                    ]}
+                    placeholder="caregiver@example.com"
+                    value={caregiverEmail}
+                    onChangeText={setCaregiverEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    placeholderTextColor={colors.textFaint}
+                  />
+                </View>
+                <View style={rg.inputGroup}>
+                  <Text style={[rg.label, { color: colors.textMuted }]}>
+                    Caregiver Phone *
+                  </Text>
+                  <TextInput
+                    style={[
+                      rg.input,
+                      {
+                        backgroundColor: colors.bgCard,
+                        borderColor: colors.border,
+                        color: colors.textPrimary,
+                      },
+                    ]}
+                    placeholder="+91 98765 43210"
+                    value={caregiverPhone}
+                    onChangeText={setCaregiverPhone}
+                    keyboardType="phone-pad"
+                    placeholderTextColor={colors.textFaint}
+                  />
+                </View>
+              </>
+            )}
             {/* Validation Errors */}
             {validationErrors.length > 0 && (
               <View
@@ -562,6 +646,7 @@ export default function RegisterScreen() {
                 </View>
               </View>
             )}
+            
             {role === "doctor" && (
               <View style={rg.inputGroup}>
                 <Text style={[rg.label, { color: colors.textMuted }]}>

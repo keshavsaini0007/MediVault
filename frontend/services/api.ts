@@ -1,9 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
-  ENABLE_API_LOGGING,
   logApiConfig,
 } from "./config";
 
@@ -212,7 +210,7 @@ const setUserData = async (user: User): Promise<void> => {
   }
 };
 
-const getMockResponse = (endpoint: string): { ok: boolean; status: number; data: Record<string, unknown> } => {
+const getMockResponse = (endpoint: string, requestBody?: string): { ok: boolean; status: number; data: Record<string, unknown> } => {
   // Patient endpoints
   if (endpoint === '/patient/dashboard') {
     return {
@@ -362,6 +360,75 @@ const getMockResponse = (endpoint: string): { ok: boolean; status: number; data:
     };
   }
   
+  // Auth endpoints - always use mock for demo mode when backend fails
+  if (endpoint === '/auth/register') {
+    // Extract user data from request body if available
+    let userData = {
+      firstName: 'User',
+      lastName: '',
+      name: 'User',
+      email: 'user@example.com',
+      role: 'patient',
+      bloodType: 'O+',
+      allergies: [] as string[],
+      caregiverName: '' as string | undefined,
+      caregiverEmail: '' as string | undefined,
+      caregiverPhone: '' as string | undefined,
+    };
+    try {
+      const body = JSON.parse(requestBody || '{}');
+      if (body.firstName) userData.firstName = body.firstName;
+      if (body.lastName) userData.lastName = body.lastName;
+      if (body.name) userData.name = body.name;
+      else userData.name = (body.firstName || '') + ' ' + (body.lastName || '');
+      if (body.email) userData.email = body.email;
+      if (body.role) userData.role = body.role;
+      if (body.bloodType) userData.bloodType = body.bloodType;
+      if (body.allergies) userData.allergies = body.allergies;
+      if (body.caregiverName) userData.caregiverName = body.caregiverName;
+      if (body.caregiverEmail) userData.caregiverEmail = body.caregiverEmail;
+      if (body.caregiverPhone) userData.caregiverPhone = body.caregiverPhone;
+    } catch {}
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        token: 'demo-token-' + Date.now(),
+        user: {
+          _id: 'demo-user-' + Date.now(),
+          ...userData,
+        },
+      },
+    };
+  }
+  if (endpoint === '/auth/login') {
+    let userData = {
+      firstName: 'User',
+      lastName: '',
+      name: 'User',
+      email: 'user@example.com',
+      role: 'patient',
+      bloodType: 'O+',
+      allergies: [] as string[],
+    };
+    try {
+      const body = JSON.parse(requestBody || '{}');
+      if (body.identifier) userData.email = body.identifier;
+      if (body.role) userData.role = body.role;
+    } catch {}
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        token: 'demo-token-' + Date.now(),
+        user: {
+          _id: 'demo-user-' + Date.now(),
+          ...userData,
+        },
+      },
+    };
+  }
+  
   // Default: return success
   return { ok: true, status: 200, data: {} };
 };
@@ -414,13 +481,13 @@ const apiCall = async (
     const err = error as Error & { name?: string; message?: string };
     if (err.name === "AbortError") {
       if (isDemo) {
-        return getMockResponse(endpoint);
+        return getMockResponse(endpoint, options.body as string | undefined);
       }
       throw new Error("Request timed out. Please check your connection.");
     }
     if (err.name === "TypeError" && err.message?.includes("Network")) {
       if (isDemo) {
-        return getMockResponse(endpoint);
+        return getMockResponse(endpoint, options.body as string | undefined);
       }
       throw new Error("Network error. Please check your internet connection.");
     }
