@@ -15,8 +15,6 @@ const QUOTES = [
   { text: 'Never miss a\ndose again.', sub: 'Smart reminders. Real accountability.' },
 ];
 
-const FEATURES = ['🤖 AI Reports', '💊 Med Tracker', '🔲 QR Profile', '📱 Doctor SMS', '🩺 Symptom Check'];
-
 // Floating orb component
 function Orb({ style }: { style: ViewStyle }) {
   const pulse = useRef(new Animated.Value(1)).current;
@@ -174,15 +172,6 @@ export default function SplashScreen() {
           <Text style={styles.enterArrow}>→</Text>
         </TouchableOpacity>
         <Text style={styles.enterLabel}>Tap to Enter</Text>
-      </Animated.View>
-
-      {/* Feature Pills */}
-      <Animated.View style={[styles.pillsRow, { opacity: pillsAnim }]}>
-        {FEATURES.map(f => (
-          <View key={f} style={styles.pill}>
-            <Text style={styles.pillText}>{f}</Text>
-          </View>
-        ))}
       </Animated.View>
     </View>
   );
@@ -379,8 +368,8 @@ const styles = StyleSheet.create({
 
   // CTA
   enterBtn: {
-    width: 66,
-    height: 66,
+    width: 90,
+    height: 90,
     borderRadius: 33,
     backgroundColor: 'rgba(79,195,247,0.1)',
     borderWidth: 1.5,

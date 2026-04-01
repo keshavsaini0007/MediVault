@@ -21,7 +21,7 @@ import { Platform } from 'react-native';
 const DEV_LOCALHOST_URL = 'http://localhost:5000/api/v1';
 
 // For Android Emulator (special IP that maps to host machine's localhost)
-const DEV_ANDROID_EMULATOR_URL = 'http://10.0.2.2:5000/api/v1';
+const DEV_ANDROID_EMULATOR_URL = 'http://10.5.1.152:5000/api/v1';
 
 // For Physical Devices on Same WiFi Network (Mobile/Expo Go)
 // IMPORTANT: Replace with your computer's actual local IP address

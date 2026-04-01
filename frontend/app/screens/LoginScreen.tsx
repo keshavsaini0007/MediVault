@@ -265,19 +265,17 @@ function RoleButton({ role, label, selected, colors, onPress }: { role: Role; la
           ls.roleBtn,
           { 
             borderColor: selected ? colors.primary : colors.border, 
-            backgroundColor: selected ? colors.primarySoft : colors.bgCard,
-            shadowColor: colors.primary,
-            shadowOpacity: selected ? 0.2 : 0.08,
+            backgroundColor: colors.bgCard,
           },
         ]}
       >
         <ColorIcon 
           icon={role === 'patient' ? 'person' : 'medkit'} 
-          color={selected ? colors.primary : colors.textMuted} 
-          bg={selected ? colors.primary : colors.primarySoft} 
+          color={colors.textMuted} 
+          bg={colors.primarySoft} 
           size={40} 
         />
-        <Text style={[ls.roleBtnText, { color: selected ? colors.primary : colors.textMuted }]}>
+        <Text style={[ls.roleBtnText, { color: colors.textMuted }]}>
           {label}
         </Text>
       </TouchableOpacity>
