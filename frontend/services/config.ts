@@ -29,7 +29,7 @@ const DEV_ANDROID_EMULATOR_URL = 'http://10.5.1.152:5000/api/v1';
 // Mac/Linux: Run `ifconfig` or `ip addr`, look for "inet" address
 // Example: If your IP is 192.168.1.100, use: 'http://192.168.1.100:5000/api/v1'
 // Current value matches your network - update if needed
-const DEV_LOCAL_NETWORK_URL = "http://10.5.0.34/api/v1";
+const DEV_LOCAL_NETWORK_URL = "http://10.5.1.152:5000/api/v1";
 
 /**
  * PRODUCTION CONFIGURATION
@@ -55,7 +55,7 @@ const USE_PHYSICAL_DEVICE = true;
  * Set this to true to use the production API even in development mode
  * Useful for testing against deployed backend
  */
-const USE_PRODUCTION_IN_DEV = false;
+const USE_PRODUCTION_IN_DEV = true;
 
 // ============================================================================
 // AUTOMATIC URL SELECTION (Don't modify below unless you know what you're doing)
