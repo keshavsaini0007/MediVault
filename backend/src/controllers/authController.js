@@ -48,6 +48,7 @@ const sanitizeUser = (userDoc) => {
 		bloodType: userDoc.bloodType,
 		allergies: userDoc.allergies,
 		emergencyContact: userDoc.emergencyContact,
+		caregiver: userDoc.caregiver,
 		assignedDoctorId: userDoc.assignedDoctorId,
 		specialization: userDoc.specialization,
 		hospitalAffiliation: userDoc.hospitalAffiliation,
@@ -98,6 +99,10 @@ const register = async (req, res, next) => {
 			specialization,
 			spec,
 			hospitalAffiliation,
+			caregiver,
+			caregiverName,
+			caregiverEmail,
+			caregiverPhone,
 		} = req.body;
 
 		const trimmedFirstName = firstName ? String(firstName).trim() : "";
@@ -133,9 +138,32 @@ const register = async (req, res, next) => {
 					.map((a) => a.trim())
 					.filter(Boolean)
 				: [];
+		const normalizedCaregiverName = caregiverName
+			? String(caregiverName).trim()
+			: caregiver?.name
+				? String(caregiver.name).trim()
+				: undefined;
+		const normalizedCaregiverEmail = caregiverEmail
+			? String(caregiverEmail).toLowerCase().trim()
+			: caregiver?.email
+				? String(caregiver.email).toLowerCase().trim()
+				: undefined;
+		const normalizedCaregiverPhone = caregiverPhone
+			? String(caregiverPhone).trim()
+			: caregiver?.phone
+				? String(caregiver.phone).trim()
+				: undefined;
 
 		if (role === "doctor" && !normalizedHospitalId) {
 			return res.status(400).json({ message: "Hospital ID is required for doctor registration." });
+		}
+
+		if (role === "patient") {
+			if (!normalizedCaregiverName || !normalizedCaregiverEmail || !normalizedCaregiverPhone) {
+				return res.status(400).json({
+					message: "Caregiver name, email, and phone are required for patient registration.",
+				});
+			}
 		}
 
 		const duplicateChecks = [{ email: normalizedEmail }];
@@ -185,6 +213,11 @@ const register = async (req, res, next) => {
 		} else {
 			userPayload.bloodType = bloodType;
 			userPayload.allergies = normalizedAllergies;
+			userPayload.caregiver = {
+				name: normalizedCaregiverName,
+				email: normalizedCaregiverEmail,
+				phone: normalizedCaregiverPhone,
+			};
 		}
 
 		const user = await User.create(userPayload);

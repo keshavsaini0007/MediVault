@@ -89,6 +89,70 @@ const validateRegister = [
     .trim()
     .isLength({ min: 7, max: 20 })
     .withMessage("Mobile must be between 7 and 20 characters."),
+  body("caregiverName")
+    .optional({ values: "falsy" })
+    .trim()
+    .isLength({ min: 2, max: 80 })
+    .withMessage("Caregiver name must be between 2 and 80 characters."),
+  body("caregiverEmail")
+    .optional({ values: "falsy" })
+    .trim()
+    .isEmail()
+    .withMessage("Enter a valid caregiver email address.")
+    .normalizeEmail(),
+  body("caregiverPhone")
+    .optional({ values: "falsy" })
+    .trim()
+    .isLength({ min: 7, max: 20 })
+    .withMessage("Caregiver phone must be between 7 and 20 characters."),
+  body("caregiver")
+    .optional({ values: "falsy" })
+    .custom((value) => {
+      if (typeof value !== "object" || Array.isArray(value)) {
+        throw new Error("caregiver must be an object.");
+      }
+      return true;
+    }),
+  body("caregiver.name")
+    .optional({ values: "falsy" })
+    .trim()
+    .isLength({ min: 2, max: 80 })
+    .withMessage("Caregiver name must be between 2 and 80 characters."),
+  body("caregiver.email")
+    .optional({ values: "falsy" })
+    .trim()
+    .isEmail()
+    .withMessage("Enter a valid caregiver email address.")
+    .normalizeEmail(),
+  body("caregiver.phone")
+    .optional({ values: "falsy" })
+    .trim()
+    .isLength({ min: 7, max: 20 })
+    .withMessage("Caregiver phone must be between 7 and 20 characters."),
+  body()
+    .custom((_, { req }) => {
+      if (req.body.role !== "patient") {
+        return true;
+      }
+
+      const caregiverName = req.body.caregiverName ?? req.body.caregiver?.name;
+      const caregiverEmail = req.body.caregiverEmail ?? req.body.caregiver?.email;
+      const caregiverPhone = req.body.caregiverPhone ?? req.body.caregiver?.phone;
+
+      if (!caregiverName || !String(caregiverName).trim()) {
+        throw new Error("Caregiver name is required for patient registration.");
+      }
+
+      if (!caregiverEmail || !String(caregiverEmail).trim()) {
+        throw new Error("Caregiver email is required for patient registration.");
+      }
+
+      if (!caregiverPhone || !String(caregiverPhone).trim()) {
+        throw new Error("Caregiver phone is required for patient registration.");
+      }
+
+      return true;
+    }),
   body("hospitalId")
     .optional({ values: "falsy" })
     .trim()

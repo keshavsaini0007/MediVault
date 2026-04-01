@@ -430,6 +430,40 @@ http://localhost:5000/api/v1
 | POST | `/auth/refresh-token` | Refresh expired token | ✅ |
 | POST | `/auth/logout` | Logout user | ✅ |
 
+#### Patient Registration Required Fields
+
+For `role: "patient"`, the register payload must include caregiver details:
+
+```json
+{
+   "firstName": "Jane",
+   "lastName": "Doe",
+   "email": "jane@example.com",
+   "password": "Pass@123",
+   "role": "patient",
+   "caregiverName": "Ravi Doe",
+   "caregiverEmail": "ravi@example.com",
+   "caregiverPhone": "+15555551212"
+}
+```
+
+These fields map each patient to an individual caregiver contact for missed-dose summary emails.
+
+#### Optional SMTP Configuration (Caregiver Daily Summary Emails)
+
+Set all of the following to enable caregiver email delivery:
+
+```env
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_SECURE=false
+MAIL_FROM=
+```
+
+If SMTP variables are not configured, the backend continues to run and caregiver email delivery is skipped.
+
 ### Patient Endpoints (`/patient`)
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
