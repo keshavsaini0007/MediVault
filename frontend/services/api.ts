@@ -86,6 +86,8 @@ export interface Medicine {
   timeSlots: string[];
   startDate: string;
   endDate?: string;
+  totalTablets?: number;
+  tabletsPerDose?: number;
   instructions?: string;
   isActive: boolean;
   createdAt: string;
@@ -1104,6 +1106,8 @@ export const medicineAPI = {
     timeSlots?: string[];
     startDate?: string;
     endDate?: string;
+    totalTablets?: number;
+    tabletsPerDose?: number;
     instructions?: string;
   }): Promise<Medicine> => {
     const response = await apiCall("/medicine", {
@@ -1231,6 +1235,18 @@ export const medicineAPI = {
     if (!response.ok) {
       throw new Error(
         (response.data.message as string) || "Failed to delete medicine",
+      );
+    }
+  },
+
+  deactivateMedicine: async (medicineId: string): Promise<void> => {
+    const response = await apiCall(`/medicine/${medicineId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isActive: false }),
+    });
+    if (!response.ok) {
+      throw new Error(
+        (response.data.message as string) || "Failed to deactivate medicine",
       );
     }
   },

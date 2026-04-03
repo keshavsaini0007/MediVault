@@ -27,6 +27,7 @@ const aiRoutes = require("./routes/ai");
 const { router: cronRouter } = require("./schedulers/missedDoseScheduler");
 const { router: dailySummaryRouter } = require("./schedulers/dailySummaryScheduler");
 const { router: doseReminderRouter } = require("./schedulers/doseReminderScheduler");
+const { router: lowSupplyRouter } = require("./schedulers/lowSupplyScheduler");
 
 const app = express();
 
@@ -96,6 +97,7 @@ app.use("/api/v1/ai", aiRoutes);
 app.use("/api/v1/cron", cronRouter);
 app.use("/api/v1/cron/daily-summary", dailySummaryRouter);
 app.use("/api/v1/cron/dose-reminders", doseReminderRouter);
+app.use("/api/v1/cron/low-supply", lowSupplyRouter);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });

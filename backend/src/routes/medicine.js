@@ -10,6 +10,7 @@ const {
 	getAdherenceSummary,
 	getWeeklyAdherenceTrend,
 	deleteMedicine,
+	updateMedicine,
 } = require("../controllers/medicineController");
 const {
 	validateAddMedicine,
@@ -30,5 +31,6 @@ router.get("/adherence/weekly", validateAdherenceQuery, getWeeklyAdherenceTrend)
 router.post("/:id/log", validateLogDose, logDose);
 router.get("/adherence", validateAdherenceQuery, getAdherenceSummary);
 router.delete("/:id", deleteMedicine);
+router.patch("/:id", updateMedicine);
 
 module.exports = router;

@@ -36,6 +36,14 @@ const medicineSchema = new mongoose.Schema(
 		endDate: {
 			type: Date,
 		},
+		totalTablets: {
+			type: Number,
+			min: 1,
+		},
+		tabletsPerDose: {
+			type: Number,
+			min: 1,
+		},
 		instructions: {
 			type: String,
 			trim: true,

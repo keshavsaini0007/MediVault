@@ -108,7 +108,7 @@ const createMissedDoseNotification = async ({ userId, medicine, scheduledTime })
 
 const addMedicine = async (req, res, next) => {
 	try {
-		const { name, dosage, frequency, timeSlots, startDate, endDate, instructions } =
+		const { name, dosage, frequency, timeSlots, startDate, endDate, instructions, totalTablets, tabletsPerDose } =
 			req.body;
 
 		if (!name || !dosage) {
@@ -116,8 +116,6 @@ const addMedicine = async (req, res, next) => {
 				.status(400)
 				.json({ message: "name and dosage are required fields." });
 		}
-
-		console.log('DEBUG addMedicine - user.id:', req.user.id);
 
 		const medicine = await Medicine.create({
 			patientId: req.user.id,
@@ -128,9 +126,9 @@ const addMedicine = async (req, res, next) => {
 			startDate: startDate || Date.now(),
 			endDate,
 			instructions,
+			...(totalTablets !== undefined && { totalTablets }),
+			...(tabletsPerDose !== undefined && { tabletsPerDose }),
 		});
-
-		console.log('DEBUG addMedicine - created:', medicine._id, 'patientId:', medicine.patientId);
 
 		return res.status(201).json({
 			message: "Medicine added successfully.",
@@ -325,6 +323,37 @@ const getDueDoses = async (req, res, next) => {
 	}
 };
 
+const updateMedicine = async (req, res, next) => {
+	try {
+		const { id } = req.params;
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			return res.status(400).json({ message: "Invalid medicine ID." });
+		}
+
+		const SAFE_FIELDS = ["isActive", "endDate", "instructions", "totalTablets", "tabletsPerDose"];
+		const updates = {};
+		for (const field of SAFE_FIELDS) {
+			if (req.body[field] !== undefined) {
+				updates[field] = req.body[field];
+			}
+		}
+
+		const medicine = await Medicine.findOneAndUpdate(
+			{ _id: id, patientId: req.user.id },
+			{ $set: updates },
+			{ new: true, runValidators: true }
+		);
+
+		if (!medicine) {
+			return res.status(404).json({ message: "Medicine not found." });
+		}
+
+		return res.status(200).json({ message: "Medicine updated successfully.", medicine });
+	} catch (error) {
+		return next(error);
+	}
+};
+
 const deleteMedicine = async (req, res, next) => {
 	try {
 		const { id } = req.params;
@@ -479,4 +508,5 @@ module.exports = {
 	getAdherenceSummary,
 	getWeeklyAdherenceTrend,
 	deleteMedicine,
+	updateMedicine,
 };
