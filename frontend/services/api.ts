@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  API_BASE_URL,
+  getApiBaseUrl,
   API_TIMEOUT_MS,
   logApiConfig,
 } from "./config";
@@ -31,8 +31,16 @@ const setDemoMode = async (isDemo: boolean): Promise<void> => {
   }
 };
 
-// Use centralized configuration
-const BASE_URL = API_BASE_URL;
+// Use centralized configuration - dynamically resolve on each request
+let cachedBaseUrl: string | null = null;
+
+const getBaseUrl = async (): Promise<string> => {
+  if (!cachedBaseUrl) {
+    cachedBaseUrl = await getApiBaseUrl();
+  }
+  return cachedBaseUrl;
+};
+
 const TIMEOUT_MS = API_TIMEOUT_MS;
 
 // Log API configuration on startup (only in development)
@@ -457,6 +465,7 @@ const apiCall = async (
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
     ...((options.headers as Record<string, string>) || {}),
   };
 
@@ -470,7 +479,8 @@ const apiCall = async (
   }
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const baseUrl = await getBaseUrl();
+    const response = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       headers,
       signal: controller.signal,
@@ -741,7 +751,8 @@ export const patientAPI = {
 
   uploadReport: async (formData: FormData): Promise<Report> => {
     const token = await getToken();
-    const response = await fetch(`${BASE_URL}/patient/reports`, {
+    const baseUrl = await getBaseUrl();
+    const response = await fetch(`${baseUrl}/patient/reports`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1536,4 +1547,4 @@ export const aiAPI = {
   },
 };
 
-export { getToken, setToken, clearToken, getUserData, setUserData, setDemoMode, BASE_URL, isDemoMode };
+export { getToken, setToken, clearToken, getUserData, setUserData, setDemoMode, getBaseUrl, isDemoMode };
