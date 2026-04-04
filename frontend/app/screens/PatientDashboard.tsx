@@ -3,10 +3,11 @@ import { ScrollView, View, Text, TouchableOpacity, StyleSheet, Animated, Alert, 
 import { useRouter, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavLayout from '@/components/BottomNavLayout';
-import { StatCard, Card, CardHeader, Badge, Button, ProgressBar, IconBox, ColorIcon } from '../../components/UI';
+import { Card, CardHeader, Badge, Button, ProgressBar, ColorIcon } from '../../components/UI';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { patientAPI, medicineAPI } from '../../services/api';
+import { patientAPI, medicineAPI, Medicine } from '../../services/api';
+import { MedicineCalendar } from '../../components/MedicineCalendar';
 
 interface DashboardData {
   activeMedicines: number;
@@ -27,14 +28,6 @@ interface DueDose {
   scheduledTime: string;
   status: 'taken' | 'missed' | 'pending';
   isOverdue: boolean;
-}
-
-interface WeeklyTrend {
-  date: string;
-  total: number;
-  taken: number;
-  missed: number;
-  adherencePercent: number;
 }
 
 interface Report {
@@ -132,7 +125,7 @@ export default function PatientDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [dueDoses, setDueDoses] = useState<DueDose[]>([]);
-  const [weeklyTrend, setWeeklyTrend] = useState<WeeklyTrend[]>([]);
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [recentReports, setRecentReports] = useState<Report[]>([]);
 
   const fetchDashboard = useCallback(async (isRefresh = false) => {
@@ -140,10 +133,10 @@ export default function PatientDashboard() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const [dashboardRes, dueDosesRes, weeklyRes, reportsRes] = await Promise.all([
+      const [dashboardRes, dueDosesRes, medsRes, reportsRes] = await Promise.all([
         patientAPI.getDashboard(),
         medicineAPI.getDueDoses(),
-        medicineAPI.getWeeklyAdherence(),
+        medicineAPI.getMedicines(),
         patientAPI.getReports(),
       ]);
 
@@ -159,7 +152,7 @@ export default function PatientDashboard() {
       });
 
       setDueDoses(dueDosesRes.dueDoses.slice(0, 5));
-      setWeeklyTrend(weeklyRes.trend);
+      setMedicines(medsRes);
       setRecentReports(reportsRes.slice(0, 3));
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
@@ -206,11 +199,6 @@ export default function PatientDashboard() {
     if (hour < 17) return t('patient.greeting.afternoon');
     return t('patient.greeting.evening');
   };
-  const getDayName = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
-  };
-
   const formatReportDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -310,36 +298,14 @@ export default function PatientDashboard() {
           </View>
         </View>
 
-        {/* Weekly Adherence */}
-        <Card variant="elevated" glowColor={colors.teal}>
-          <CardHeader 
-            title={t('patient.section.weeklyAdherence')}
-            icon="analytics-outline"
-            right={
-              <Badge
-                label={dashboard?.adherencePercent && dashboard.adherencePercent >= 80 ? t('patient.weekly.onTrack') : t('patient.weekly.keepGoing')}
-                type={dashboard?.adherencePercent && dashboard.adherencePercent >= 80 ? 'success' : 'warning'}
-              />
-            }
-          />
-          <View style={{ padding: 16 }}>
-            <View style={s.barChart}>
-              {weeklyTrend.map((day, i) => (
-                <View key={i} style={{ flex: 1, alignItems: 'center', gap: 5 }}>
-                  <View style={[s.bar, {
-                    height: Math.max(4, day.adherencePercent * 0.6),
-                    backgroundColor: i === weeklyTrend.length - 1 ? colors.teal : colors.tealSoft,
-                    shadowColor: i === weeklyTrend.length - 1 ? colors.teal : 'transparent',
-                    shadowOpacity: i === weeklyTrend.length - 1 ? 0.4 : 0,
-                    shadowRadius: 4,
-                    borderTopLeftRadius: 4, borderTopRightRadius: 4,
-                  }]} />
-                  <Text style={{ fontSize: 10, color: colors.textFaint }}>{getDayName(day.date)}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </Card>
+        {/* Medicine Calendar */}
+        <MedicineCalendar
+          medicines={medicines}
+          showSummary={false}
+          onDatePress={(date) => {
+            console.log('Selected date:', date.dateString);
+          }}
+        />
 
       </ScrollView>
     </BottomNavLayout>

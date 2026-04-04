@@ -13,14 +13,6 @@ import { MedicineCalendar } from '../../components/MedicineCalendar';
 import { medicineAPI, Medicine } from '../../services/api';
 import { calculateEndDate, getDaysRemaining } from '../../utils/calculateEndDate';
 
-interface WeeklyTrend {
-  date: string;
-  total: number;
-  taken: number;
-  missed: number;
-  adherencePercent: number;
-}
-
 interface DueDose {
   medicineId: string;
   medicineName: string;
@@ -62,7 +54,6 @@ export default function MedicinesScreen() {
 
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [dueDoses, setDueDoses] = useState<DueDose[]>([]);
-  const [weeklyTrend, setWeeklyTrend] = useState<WeeklyTrend[]>([]);
   const [adherence, setAdherence] = useState<Array<{ medicineId: string; adherencePercent: number }>>([]);
 
   const [newMed, setNewMed] = useState({ ...DEFAULT_MED });
@@ -74,16 +65,14 @@ export default function MedicinesScreen() {
       else setLoading(true);
       setError('');
 
-      const [medsRes, dueRes, weeklyRes, adherenceRes] = await Promise.all([
+      const [medsRes, dueRes, adherenceRes] = await Promise.all([
         medicineAPI.getMedicines(),
         medicineAPI.getDueDoses(),
-        medicineAPI.getWeeklyAdherence(),
         medicineAPI.getAdherenceSummary(),
       ]);
 
       setMedicines(medsRes);
       setDueDoses(dueRes.dueDoses);
-      setWeeklyTrend(weeklyRes.trend);
       setAdherence(adherenceRes.map(a => ({ medicineId: a.medicineId, adherencePercent: a.adherencePercent })));
     } catch (err) {
       const message = err instanceof Error ? err.message : t('med.error.fetchFailed');
@@ -260,11 +249,6 @@ export default function MedicinesScreen() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const getDayName = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return ['S', 'M', 'T', 'W', 'T', 'F', 'S'][date.getDay()];
-  };
-
   const getDaysRemainingBadge = (endDate: string): { text: string; type: 'success' | 'warning' | 'danger' | 'default' } => {
     const days = getDaysRemaining(endDate);
     if (days > 7) return { text: `${days} days left`, type: 'default' };
@@ -360,32 +344,6 @@ export default function MedicinesScreen() {
                     );
                   })
                 )}
-              </View>
-            </Card>
-
-            {/* Weekly Adherence */}
-            <Card variant="elevated" glowColor={colors.teal}>
-              <CardHeader
-                title={t('med.section.weeklyAdherence')}
-                icon="analytics-outline"
-                right={<Badge label={`${stats.avgAdherence}% ${t('med.avg')}`} type={stats.avgAdherence >= 80 ? 'success' : 'warning'} />}
-              />
-              <View style={{ padding: 16 }}>
-                <View style={md.weeklyBars}>
-                  {weeklyTrend.map((day, i) => (
-                    <View key={i} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                      <View style={[md.bar, {
-                        height: Math.max(6, day.adherencePercent * 0.5),
-                        backgroundColor: i === weeklyTrend.length - 1 ? colors.teal : colors.tealSoft,
-                        shadowColor: i === weeklyTrend.length - 1 ? colors.teal : 'transparent',
-                        shadowOpacity: i === weeklyTrend.length - 1 ? 0.4 : 0,
-                        shadowRadius: 4,
-                        borderTopLeftRadius: 4, borderTopRightRadius: 4,
-                      }]} />
-                      <Text style={{ fontSize: 10, color: colors.textFaint }}>{getDayName(day.date)}</Text>
-                    </View>
-                  ))}
-                </View>
               </View>
             </Card>
 

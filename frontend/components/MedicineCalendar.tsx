@@ -27,12 +27,14 @@ interface MedicineCalendarProps {
   medicines: Medicine[];
   adherenceData?: { [date: string]: { status: 'taken' | 'missed' | 'pending' } };
   onDatePress?: (date: DateData) => void;
+  showSummary?: boolean;
 }
 
 export function MedicineCalendar({ 
   medicines, 
   adherenceData = {}, 
-  onDatePress 
+  onDatePress,
+  showSummary = true,
 }: MedicineCalendarProps) {
   const { colors } = useTheme();
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -193,13 +195,15 @@ export function MedicineCalendar({
       
       <View style={{ padding: 16 }}>
         {/* Weekly Adherence Summary */}
-        <WeeklyAdherenceSummary 
-          year={currentMonth.year}
-          month={currentMonth.month}
-        />
+        {showSummary && (
+          <WeeklyAdherenceSummary 
+            year={currentMonth.year}
+            month={currentMonth.month}
+          />
+        )}
 
         {/* Streak Counter */}
-        {!streakLoading && streakData && (
+        {showSummary && !streakLoading && streakData && (
           <StreakCounter
             currentStreak={streakData.currentStreak}
             milestones={streakData.milestones}
@@ -208,7 +212,7 @@ export function MedicineCalendar({
           />
         )}
 
-        {streakError && (
+        {showSummary && streakError && (
           <View style={styles.errorContainer}>
             <Text style={[styles.errorText, { color: colors.danger }]}>
               Streak data temporarily unavailable
